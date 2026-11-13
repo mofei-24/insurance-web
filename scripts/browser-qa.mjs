@@ -322,7 +322,23 @@ try {
     death = await pos("D01"),
     disability = await pos("A01"),
     payment = await pos("BENEFICIARY");
-  assert.ok(entry.width > 190, "首次进入完整图以可读比例从左侧开始");
+  const firstCanvas = await page.locator(".graph-shell").boundingBox();
+  const firstCards = await page.locator(".flow-card").evaluateAll((cards) =>
+    cards.map((card) => {
+      const { left, right, top, bottom } = card.getBoundingClientRect();
+      return { left, right, top, bottom };
+    }),
+  );
+  assert.ok(
+    firstCards.every(
+      ({ left, right, top, bottom }) =>
+        left >= firstCanvas.x &&
+        right <= firstCanvas.x + firstCanvas.width &&
+        top >= firstCanvas.y &&
+        bottom <= firstCanvas.y + firstCanvas.height,
+    ),
+    "首次进入完整图时，所有默认可见节点均在画布内",
+  );
   assert.ok(entry.x < selector.x && selector.x < death.x);
   assert.ok(
     Math.abs(death.x - disability.x) < 0.01 &&
@@ -369,7 +385,7 @@ try {
   await page.screenshot({
     path: path.join(root, "test-results", "full-tree-local-exits.png"),
   });
-  await panCanvas(0, 210);
+  await panCanvas(0, canvas.y + canvas.height - 72 - (d04InView.y - 105));
   assert.equal(await exitList.getAttribute("data-placement"), "above");
   await exitList.getByRole("button", { name: /需补材料/ }).click();
   assert.equal(
@@ -409,6 +425,8 @@ try {
     await page.locator('.react-flow__node[data-id="A05"]').count(),
     1,
   );
+  await page.locator(".react-flow__controls-zoomin").click();
+  await page.waitForTimeout(300);
   const savedFullView = await readView();
   await page.locator('.react-flow__node[data-id="A01"] .phase-entry').click();
   await page.waitForTimeout(450);
@@ -547,6 +565,10 @@ try {
     path: path.join(root, "test-results", "desktop-calculation.png"),
   });
   assert.match(await page.locator(".calculation-lines").innerText(), /800000/);
+  assert.doesNotMatch(
+    await page.locator(".trace-steps").innerText(),
+    /\b(?:ordinary|declared)\s*·/,
+  );
   checks.push("历史20万元扣减与逐步计算明细");
   assert.equal(
     await page
@@ -588,13 +610,19 @@ try {
   );
   assert.equal(
     await chosenEdge.evaluate((e) => getComputedStyle(e).stroke),
-    "rgb(37, 99, 235)",
+    "rgb(36, 76, 59)",
+  );
+  assert.equal(
+    await page
+      .locator('.react-flow__edge[data-id="D02::true::D04"] .case-highlight')
+      .count(),
+    1,
   );
   assert.equal(
     await page
       .locator('.react-flow__node[data-id="D04"] .flow-card')
       .evaluate((e) => getComputedStyle(e).borderTopColor),
-    "rgb(195, 105, 19)",
+    "rgb(48, 51, 45)",
   );
   assert.ok(
     await page
@@ -606,9 +634,7 @@ try {
   await page.screenshot({
     path: path.join(root, "test-results", "full-tree-case-path.png"),
   });
-  checks.push(
-    "案例路径边/箭头及节点外圈使用蓝色，金额计算橙色标签保留，未走分支淡化",
-  );
+  checks.push("案例路径有淡黄底划线，金额节点保留账单粗边，未走分支淡化");
 
   const calculationNode = page.locator(
     '.react-flow__node[data-id="D04"] .node-main',
@@ -804,7 +830,9 @@ try {
     await closeOriginal.click();
     await stageSelector.selectOption("responsibility:RESP_DEATH");
     await page.locator('.react-flow__node[data-id="REFUND_CALC"]').waitFor();
-    await page.getByRole("button", { name: "节点索引 53", exact: true }).click();
+    await page
+      .getByRole("button", { name: "节点索引 53", exact: true })
+      .click();
     await page.getByRole("textbox", { name: "搜索条款或节点" }).fill("X01");
     await page.locator(".node-index").filter({ hasText: "X01" }).click();
     assert.match(
