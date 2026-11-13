@@ -1,0 +1,16 @@
+{
+  "valid": true,
+  "errors": [],
+  "counts": {
+    "nodes": 53,
+    "facts": 70,
+    "rules": 19,
+    "sources": 51,
+    "unresolved": 8,
+    "edges": 120,
+    "dependencies": 12
+  },
+  "schema_version": "insurance_semantic_graph/fusion-1.0",
+  "graph_sha256": "edde2043838a4317667f846e0ec9f5c90c052d560b8a713ae902f835e9bd0760",
+  "contract_sha256": "203b412b0338e296ff0e057fbf2eec0a00fc0d4f82b60ffcccb4db1389d3ef9a"
+}

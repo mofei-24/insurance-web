@@ -1,0 +1,4353 @@
+{
+  "schema_version": "insurance_semantic_graph/fusion-1.0",
+  "title": "人保借款人意外伤害保险（2022版）· 结构化条件与责任依赖融合版",
+  "document": {
+    "insurer": "中国人民财产保险股份有限公司",
+    "product": "借款人意外伤害保险",
+    "edition": "2022版",
+    "source_file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+    "source_scope_note": "本树依据所给条款文本结构化。保单特别约定、投保单、批单、贷款及还款记录、伤残评定标准正文等外部材料未包含在源文件中，须作为案件事实或外部规则输入，不得由模型猜测。"
+  },
+  "provenance": {
+    "business_source": {
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "sha256": "203b412b0338e296ff0e057fbf2eec0a00fc0d4f82b60ffcccb4db1389d3ef9a"
+    },
+    "architecture_inputs": [
+      {
+        "file": "借款人意外伤害保险_语义判断树.json",
+        "schema_version": "1.1.1",
+        "sha256": "379b40d2ac7a358f4caa15391bd22353c5cb1161b80cc2c166b9d2fc2fd4f3e2"
+      },
+      {
+        "file": "同方.json",
+        "schema_version": "insurance_semantic_graph/2.0",
+        "sha256": "61874752803ccc44388117b9adf142fe72e53f07d689ac8a73a4309613b58431",
+        "role": "仅借鉴事实字典、表达式、分支和效果结构"
+      }
+    ],
+    "created_date": "2026-11-06",
+    "review_status": "draft_pending_business_review"
+  },
+  "scope": {
+    "decision_level": "clause_local_with_explicit_cross_responsibility_dependencies",
+    "product_boundary": "仅人保借款人意外伤害保险业务规则；同方寿险的两年自杀、60日宽限、现金价值退还等不移植。",
+    "limitations": [
+      "不执行真实给付；责任、事实及金额输入需经证据核实。",
+      "如实告知、特别约定及合同效力使用外部审核门槛，未实现完整状态机。",
+      "日期期间边界、伤残标准、递减保额累计上限口径仍需外部核定。",
+      "事实字典字段齐全不等于材料真实；非已确认输入不会被当作确定事实。"
+    ]
+  },
+  "entry_id": "ENTRY_INSURANCE",
+  "execution_contract": {
+    "expression_language": {
+      "leaves": [
+        "fact",
+        "var",
+        "literal",
+        "rule"
+      ],
+      "logical_ops": [
+        "all",
+        "any",
+        "not"
+      ],
+      "comparison_ops": [
+        "eq",
+        "gt",
+        "gte",
+        "lte"
+      ],
+      "arithmetic_ops": [
+        "add",
+        "subtract",
+        "multiply",
+        "min",
+        "max"
+      ],
+      "all": "有false则false；全true才true；否则unknown。",
+      "any": "有true则true；全false才false；否则unknown。",
+      "not": "unknown的否定仍是unknown。",
+      "review": "已访问的冲突/无效事实产生review；不转成false或默认0。"
+    },
+    "fact_envelope": {
+      "value": "符合facts.data_type的值；金额和比例使用十进制字符串",
+      "status": "confirmed | unknown | disputed",
+      "evidence_ids": "案件证据ID列表；实际材料由外部系统管理",
+      "reviewer": "确认人员或核验系统标识"
+    },
+    "plain_fact_values": "仅合成验证用例允许省略包裹；正式输入应使用带审核状态的事实对象。",
+    "dependency_resolution": "执行计算节点前，按depends_on获取历史或共享规则输出并绑定var；未知走on_unknown，冲突走on_review。",
+    "effect_accumulation": "entry.effects、decision.on_true_effects及outcome.effects累积；待补材料不抹去已成立的局部效果。",
+    "output_contract": {
+      "code": "LOCAL_PASS | LOCAL_FAIL | NEEDS_INPUT | NEEDS_REVIEW | SETTLEMENT_PENDING",
+      "effects": "按作用类别保留局部责任、金额、受益权、责任终止和返还义务",
+      "trace": "已走节点、条件结果、依赖状态与source_refs",
+      "missing_facts": "当前实际访问路径缺失的事实",
+      "missing_dependencies": "当前计算缺失的依赖ID",
+      "amount": "未算出为null，明确0为零金额"
+    },
+    "numeric_policy": "Decimal定点；禁止缺失值当0；不指定无来源的四舍五入口径。",
+    "date_policy": "180日、30日按源条款和审核后的期间口径确认；不硬编码寿险两年规则。",
+    "formal_validation": "结构、引用与合成案例见validate_fusion.py和validation_report.json；不构成真实理赔准确率评估。"
+  },
+  "facts": [
+    {
+      "id": "benefit_type",
+      "label": "申请责任类型",
+      "question": "申请责任类型？",
+      "data_type": "enum",
+      "binding": "case_input",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "allowed_values": [
+        "death",
+        "disability"
+      ]
+    },
+    {
+      "id": "death_mode",
+      "label": "本次身故申请路径",
+      "question": "本次身故申请路径？",
+      "data_type": "enum",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DEATH",
+        "E_DECLARED"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "allowed_values": [
+        "ordinary",
+        "declared"
+      ]
+    },
+    {
+      "id": "insured_policy_match",
+      "label": "被保险人与本合同对应关系已确认",
+      "question": "被保险人与本合同对应关系已确认？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_CONTRACT",
+        "S_ELIGIBILITY"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "accident_in_policy_period",
+      "label": "事故发生于保险单载明的保险期间内",
+      "question": "事故发生于保险单载明的保险期间内？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_PERIOD",
+        "E_TOTAL"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "qualification_acquired_at_accident",
+      "label": "事故时已取得被保资格",
+      "question": "事故时已取得被保资格？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_START"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "coverage_not_terminated_at_accident",
+      "label": "事故前未发生有效解除或终止保险责任",
+      "question": "事故前未发生有效解除或终止保险责任？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_END",
+        "S_CANCEL"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "premium_coverage_at_accident",
+      "label": "交费状态支持事故时保险责任有效",
+      "question": "交费状态支持事故时保险责任有效？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_PREMIUM"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "contract_terms_reviewed_no_block",
+      "label": "特别约定、承保资格及告知效力已审核且不阻碍本责任局部判断",
+      "question": "特别约定、承保资格及告知效力已审核且不阻碍本责任局部判断？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_CONTRACT",
+        "S_ELIGIBILITY",
+        "S_DISCLOSURE",
+        "S_LAW"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "external_event",
+      "label": "事件具有外来性",
+      "question": "事件具有外来性？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_ACCIDENT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "sudden_event",
+      "label": "事件具有突发性",
+      "question": "事件具有突发性？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_ACCIDENT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "unintentional_event",
+      "label": "事件具有非本意性",
+      "question": "事件具有非本意性？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_ACCIDENT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "non_disease_event",
+      "label": "事件具有非疾病性",
+      "question": "事件具有非疾病性？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_ACCIDENT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "bodily_injury",
+      "label": "事件造成身体伤害",
+      "question": "事件造成身体伤害？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_ACCIDENT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "definition_interaction_resolved",
+      "label": "意外定义与免责例外、感染成因等交叉适用已核实",
+      "question": "意外定义与免责例外、感染成因等交叉适用已核实？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_ACCIDENT",
+        "S_EX03",
+        "S_EX10"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "same_accident_caused_claimed_outcome",
+      "label": "本次意外与本次申报身故或伤残的因果关系成立",
+      "question": "本次意外与本次申报身故或伤残的因果关系成立？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_TOTAL",
+        "E_DEATH",
+        "E_DISABILITY"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "actual_death_occurred",
+      "label": "被保险人确已实际身故",
+      "question": "被保险人确已实际身故？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DEATH"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "death_within_180_days",
+      "label": "按已核实期间口径，实际身故在本次事故起180日内",
+      "question": "按已核实期间口径，实际身故在本次事故起180日内？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DEATH"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "temporal_constraint": {
+        "start_fact": "accident_date",
+        "end_fact": "death_date",
+        "operator": "within",
+        "duration": {
+          "value": 180,
+          "unit": "day"
+        },
+        "boundary_policy": "按条款及审核后的期间口径确认",
+        "derived_automatically": false
+      }
+    },
+    {
+      "id": "missing_since_accident",
+      "label": "被保险人因意外且自事故发生日起下落不明",
+      "question": "被保险人因意外且自事故发生日起下落不明？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "court_declared_death",
+      "label": "人民法院已宣告被保险人死亡",
+      "question": "人民法院已宣告被保险人死亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "returned_alive",
+      "label": "被宣告死亡后已经生还",
+      "question": "被宣告死亡后已经生还？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "treatment_unfinished_day180",
+      "label": "事故后第180日治疗仍未结束",
+      "question": "事故后第180日治疗仍未结束？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DISABILITY"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "temporal_constraint": {
+        "anchor_fact": "accident_date",
+        "assessment_offset": {
+          "value": 180,
+          "unit": "day"
+        },
+        "boundary_policy": "第180日身体情况；鉴定出具日期可以不同",
+        "derived_automatically": false
+      }
+    },
+    {
+      "id": "listed_disability_within180",
+      "label": "事故起180日内造成评定标准所列伤残",
+      "question": "事故起180日内造成评定标准所列伤残？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DISABILITY",
+        "S_STANDARD"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "temporal_constraint": {
+        "start_fact": "accident_date",
+        "event": "形成标准所列伤残",
+        "operator": "within",
+        "duration": {
+          "value": 180,
+          "unit": "day"
+        },
+        "boundary_policy": "不把鉴定日期直接当伤残形成日期",
+        "derived_automatically": false
+      }
+    },
+    {
+      "id": "listed_disability_at_day180",
+      "label": "依据第180日身体情况构成标准所列伤残",
+      "question": "依据第180日身体情况构成标准所列伤残？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DISABILITY",
+        "S_STANDARD"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "temporal_constraint": {
+        "anchor_fact": "accident_date",
+        "assessment_offset": {
+          "value": 180,
+          "unit": "day"
+        },
+        "boundary_policy": "第180日身体情况；鉴定出具日期可以不同",
+        "derived_automatically": false
+      }
+    },
+    {
+      "id": "assessment_evidence_valid",
+      "label": "伤残鉴定及适用标准版本已经核实",
+      "question": "伤残鉴定及适用标准版本已经核实？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_STANDARD",
+        "S_DISABILITY_DOCS"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "multiple_disabilities",
+      "label": "同一事故造成两处或以上伤残",
+      "question": "同一事故造成两处或以上伤残？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_MULTI"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "multiple_assessment_applied",
+      "label": "多处伤残已按适用标准原则评定",
+      "question": "多处伤残已按适用标准原则评定？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_MULTI",
+        "S_STANDARD"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "preexisting_disability",
+      "label": "本次事故之前已有残疾",
+      "question": "本次事故之前已有残疾？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_PRIOR"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "beneficiary_disqualified",
+      "label": "当前指定受益人存在条款规定的失权情形",
+      "question": "当前指定受益人存在条款规定的失权情形？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_BENEFICIARY"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "recipient_allocation_resolved",
+      "label": "本次实际受领人、顺序、份额及授权已核实",
+      "question": "本次实际受领人、顺序、份额及授权已核实？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_BENEFICIARY",
+        "S_APPLICANT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "installment_topup_satisfied",
+      "label": "一次性缴费无需补交，或分期剩余全年保费已补交/有效特别约定已满足",
+      "question": "一次性缴费无需补交，或分期剩余全年保费已补交/有效特别约定已满足？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_PREMIUM"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "refund_accounting_confirmed",
+      "label": "原宣告死亡已付款及已履行返还的冲销口径已核实",
+      "question": "原宣告死亡已付款及已履行返还的冲销口径已核实？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "disability_ratio",
+      "label": "无既有残疾路径的评定给付比例",
+      "question": "无既有残疾路径的评定给付比例？",
+      "data_type": "decimal",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DISABILITY",
+        "S_MULTI",
+        "S_PRIOR",
+        "S_STANDARD"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "minimum": "0",
+      "maximum": "1",
+      "unit": "比例"
+    },
+    {
+      "id": "combined_ratio",
+      "label": "合并后伤残给付比例",
+      "question": "合并后伤残给付比例？",
+      "data_type": "decimal",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DISABILITY",
+        "S_MULTI",
+        "S_PRIOR",
+        "S_STANDARD"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "minimum": "0",
+      "maximum": "1",
+      "unit": "比例"
+    },
+    {
+      "id": "prior_ratio",
+      "label": "事故前原有伤残给付比例",
+      "question": "事故前原有伤残给付比例？",
+      "data_type": "decimal",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DISABILITY",
+        "S_MULTI",
+        "S_PRIOR",
+        "S_STANDARD"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "minimum": "0",
+      "maximum": "1",
+      "unit": "比例"
+    },
+    {
+      "id": "applicable_aggregate_limit",
+      "label": "经审核的本次累计保险金额上限",
+      "question": "经审核的本次累计保险金额上限？",
+      "data_type": "decimal",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_TOTAL",
+        "E_LIMIT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "minimum": "0",
+      "unit": "合同币种"
+    },
+    {
+      "id": "already_refunded",
+      "label": "原宣告死亡已付款中已确认返还的金额",
+      "question": "原宣告死亡已付款中已确认返还的金额？",
+      "data_type": "decimal",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "minimum": "0",
+      "unit": "合同币种"
+    },
+    {
+      "id": "limit_basis_status",
+      "label": "累计上限口径是否已核定",
+      "question": "累计上限口径是否已核定？",
+      "data_type": "enum",
+      "binding": "external_assessment",
+      "source_refs": [
+        "E_LIMIT",
+        "E_AMOUNT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0",
+      "allowed_values": [
+        "confirmed",
+        "unresolved"
+      ]
+    },
+    {
+      "id": "policy_id",
+      "label": "保单标识",
+      "question": "保单标识？",
+      "data_type": "string",
+      "binding": "case_input",
+      "source_refs": [
+        "S_CONTRACT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "insured_id",
+      "label": "被保险人标识",
+      "question": "被保险人标识？",
+      "data_type": "string",
+      "binding": "case_input",
+      "source_refs": [
+        "S_ELIGIBILITY"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "accident_id",
+      "label": "事故标识",
+      "question": "事故标识？",
+      "data_type": "string",
+      "binding": "case_input",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "currency",
+      "label": "合同币种",
+      "question": "合同币种？",
+      "data_type": "string",
+      "binding": "case_input",
+      "source_refs": [
+        "E_AMOUNT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "payment_history_snapshot_id",
+      "label": "给付快照标识",
+      "question": "给付快照标识？",
+      "data_type": "string",
+      "binding": "case_input",
+      "source_refs": [
+        "E_OFFSET",
+        "E_TOTAL"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "settlement_snapshot_at",
+      "label": "本次增量给付核算截止时间",
+      "question": "本次增量给付核算截止时间？",
+      "data_type": "datetime",
+      "binding": "case_input",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "accident_date",
+      "label": "事故发生日期",
+      "question": "事故发生日期？",
+      "data_type": "date_or_datetime",
+      "binding": "case_input",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "death_date",
+      "label": "实际身故日期",
+      "question": "实际身故日期？",
+      "data_type": "date_or_datetime",
+      "binding": "case_input",
+      "source_refs": [
+        "E_DEATH"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "court_declared_death_date",
+      "label": "法院宣告的死亡日期",
+      "question": "法院宣告的死亡日期？",
+      "data_type": "date_or_datetime",
+      "binding": "case_input",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "declared_death_claim_id",
+      "label": "原宣告死亡案件标识",
+      "question": "原宣告死亡案件标识？",
+      "data_type": "string",
+      "binding": "case_input",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "refund_review_at",
+      "label": "返还核查截止时间",
+      "question": "返还核查截止时间？",
+      "data_type": "datetime",
+      "binding": "case_input",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "policyholder_intentional_harm",
+      "label": "投保人故意杀害或伤害导致本案伤亡",
+      "question": "投保人故意杀害或伤害导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX01"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "crime_or_resistance",
+      "label": "故意犯罪或抗拒刑事强制措施导致本案伤亡",
+      "question": "故意犯罪或抗拒刑事强制措施导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX02"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "provocation_fight",
+      "label": "挑衅或故意行为导致打斗、被袭击或被谋杀并导致本案伤亡",
+      "question": "挑衅或故意行为导致打斗、被袭击或被谋杀并导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX04"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "pregnancy_delivery",
+      "label": "妊娠、流产或分娩导致本案伤亡",
+      "question": "妊娠、流产或分娩导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX05"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "medical_act_accident",
+      "label": "接受医疗行为造成意外并导致本案伤亡",
+      "question": "接受医疗行为造成意外并导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX06"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "disease_cause",
+      "label": "疾病导致本案伤亡，含条款列举疾病",
+      "question": "疾病导致本案伤亡，含条款列举疾病？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX09",
+        "S_ACCIDENT",
+        "S_SUDDEN"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "non_accidental_infection",
+      "label": "非因意外伤害导致的病原体感染导致本案伤亡",
+      "question": "非因意外伤害导致的病原体感染导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX10",
+        "S_ACCIDENT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "allergic_cause",
+      "label": "过敏或变态反应性疾病导致本案伤亡",
+      "question": "过敏或变态反应性疾病导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX11",
+        "S_ACCIDENT"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "weapon_nuclear_cause",
+      "label": "条款列明武器或核装置风险导致本案伤亡",
+      "question": "条款列明武器或核装置风险导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX12"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "war_terror_cause",
+      "label": "战争、军事冲突、暴乱、武装叛乱或恐怖袭击导致本案伤亡",
+      "question": "战争、军事冲突、暴乱、武装叛乱或恐怖袭击导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX13"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "mental_disorder_cause",
+      "label": "ICD-10精神行为障碍情形符合本案免责因果要求",
+      "question": "ICD-10精神行为障碍情形符合本案免责因果要求？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX14",
+        "S_ICD"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "high_risk_sport_cause",
+      "label": "从事条款定义高风险运动并符合本案免责因果要求",
+      "question": "从事条款定义高风险运动并符合本案免责因果要求？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX16",
+        "S_RISK"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "intentional_self_harm",
+      "label": "故意自伤导致本案伤亡",
+      "question": "故意自伤导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EX03",
+        "S_EXCLUSION"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "suicide",
+      "label": "自杀导致本案身故",
+      "question": "自杀导致本案身故？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EX03",
+        "S_EXCLUSION"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "no_capacity_at_suicide",
+      "label": "自杀时无民事行为能力",
+      "question": "自杀时无民事行为能力？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EX03",
+        "S_EXCLUSION"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "nonprescribed_medication_cause",
+      "label": "未遵医嘱用药导致本案伤亡",
+      "question": "未遵医嘱用药导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EX07"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "otc_used_as_directed",
+      "label": "该用药属于按说明使用非处方药",
+      "question": "该用药属于按说明使用非处方药？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EX07"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "substance_influence_cause",
+      "label": "酒精毒品或管制药物影响导致本案伤亡",
+      "question": "酒精毒品或管制药物影响导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EX08"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "prescribed_medication_exception",
+      "label": "本案属于遵医嘱使用药物的例外",
+      "question": "本案属于遵医嘱使用药物的例外？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EX08"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "drunk_driving_cause",
+      "label": "酒后驾驶符合定义并导致本案伤亡",
+      "question": "酒后驾驶符合定义并导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EX15",
+        "S_DRUNK"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "invalid_driver_license_cause",
+      "label": "无合法有效驾驶证驾驶并导致本案伤亡",
+      "question": "无合法有效驾驶证驾驶并导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EX15",
+        "S_LICENSE"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    },
+    {
+      "id": "invalid_vehicle_license_cause",
+      "label": "驾驶无有效行驶证机动车并导致本案伤亡",
+      "question": "驾驶无有效行驶证机动车并导致本案伤亡？",
+      "data_type": "boolean",
+      "binding": "external_assessment",
+      "source_refs": [
+        "S_EX15",
+        "S_VEHICLE"
+      ],
+      "unknown_policy": "缺失或尚未核实为unknown；冲突或类型错误为review，不默认为false/0"
+    }
+  ],
+  "rules": [
+    {
+      "id": "EX01",
+      "label": "投保人故意杀害或伤害导致本案伤亡",
+      "condition": {
+        "fact": "policyholder_intentional_harm"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX01"
+      ]
+    },
+    {
+      "id": "EX02",
+      "label": "故意犯罪或抗拒刑事强制措施导致本案伤亡",
+      "condition": {
+        "fact": "crime_or_resistance"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX02"
+      ]
+    },
+    {
+      "id": "EX03",
+      "label": "自伤或不适用例外的自杀",
+      "condition": {
+        "op": "any",
+        "args": [
+          {
+            "fact": "intentional_self_harm"
+          },
+          {
+            "op": "all",
+            "args": [
+              {
+                "fact": "suicide"
+              },
+              {
+                "op": "not",
+                "args": [
+                  {
+                    "fact": "no_capacity_at_suicide"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX03"
+      ]
+    },
+    {
+      "id": "EX04",
+      "label": "挑衅或故意行为导致打斗、被袭击或被谋杀并导致本案伤亡",
+      "condition": {
+        "fact": "provocation_fight"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX04"
+      ]
+    },
+    {
+      "id": "EX05",
+      "label": "妊娠、流产或分娩导致本案伤亡",
+      "condition": {
+        "fact": "pregnancy_delivery"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX05"
+      ]
+    },
+    {
+      "id": "EX06",
+      "label": "接受医疗行为造成意外并导致本案伤亡",
+      "condition": {
+        "fact": "medical_act_accident"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX06"
+      ]
+    },
+    {
+      "id": "EX07",
+      "label": "未遵医嘱用药及非处方药例外",
+      "condition": {
+        "op": "all",
+        "args": [
+          {
+            "fact": "nonprescribed_medication_cause"
+          },
+          {
+            "op": "not",
+            "args": [
+              {
+                "fact": "otc_used_as_directed"
+              }
+            ]
+          }
+        ]
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX07"
+      ]
+    },
+    {
+      "id": "EX08",
+      "label": "物质影响及遵医嘱例外",
+      "condition": {
+        "op": "all",
+        "args": [
+          {
+            "fact": "substance_influence_cause"
+          },
+          {
+            "op": "not",
+            "args": [
+              {
+                "fact": "prescribed_medication_exception"
+              }
+            ]
+          }
+        ]
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX08"
+      ]
+    },
+    {
+      "id": "EX09",
+      "label": "疾病导致本案伤亡，含条款列举疾病",
+      "condition": {
+        "fact": "disease_cause"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX09",
+        "S_ACCIDENT",
+        "S_SUDDEN"
+      ]
+    },
+    {
+      "id": "EX10",
+      "label": "非因意外伤害导致的病原体感染导致本案伤亡",
+      "condition": {
+        "fact": "non_accidental_infection"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX10",
+        "S_ACCIDENT"
+      ]
+    },
+    {
+      "id": "EX11",
+      "label": "过敏或变态反应性疾病导致本案伤亡",
+      "condition": {
+        "fact": "allergic_cause"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX11",
+        "S_ACCIDENT"
+      ]
+    },
+    {
+      "id": "EX12",
+      "label": "条款列明武器或核装置风险导致本案伤亡",
+      "condition": {
+        "fact": "weapon_nuclear_cause"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX12"
+      ]
+    },
+    {
+      "id": "EX13",
+      "label": "战争、军事冲突、暴乱、武装叛乱或恐怖袭击导致本案伤亡",
+      "condition": {
+        "fact": "war_terror_cause"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX13"
+      ]
+    },
+    {
+      "id": "EX14",
+      "label": "ICD-10精神行为障碍情形符合本案免责因果要求",
+      "condition": {
+        "fact": "mental_disorder_cause"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX14",
+        "S_ICD"
+      ]
+    },
+    {
+      "id": "EX15",
+      "label": "机动车驾驶免责",
+      "condition": {
+        "op": "any",
+        "args": [
+          {
+            "fact": "drunk_driving_cause"
+          },
+          {
+            "fact": "invalid_driver_license_cause"
+          },
+          {
+            "fact": "invalid_vehicle_license_cause"
+          }
+        ]
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX15",
+        "S_DRUNK",
+        "S_LICENSE",
+        "S_VEHICLE"
+      ]
+    },
+    {
+      "id": "EX16",
+      "label": "从事条款定义高风险运动并符合本案免责因果要求",
+      "condition": {
+        "fact": "high_risk_sport_cause"
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX16",
+        "S_RISK"
+      ]
+    },
+    {
+      "id": "RULE_ACCIDENT",
+      "label": "意外定义构成",
+      "condition": {
+        "op": "all",
+        "args": [
+          {
+            "fact": "external_event"
+          },
+          {
+            "fact": "sudden_event"
+          },
+          {
+            "fact": "unintentional_event"
+          },
+          {
+            "fact": "non_disease_event"
+          },
+          {
+            "fact": "bodily_injury"
+          }
+        ]
+      },
+      "source_refs": [
+        "S_ACCIDENT"
+      ]
+    },
+    {
+      "id": "RULE_COVERAGE",
+      "label": "事故时保障有效",
+      "condition": {
+        "op": "all",
+        "args": [
+          {
+            "fact": "accident_in_policy_period"
+          },
+          {
+            "fact": "qualification_acquired_at_accident"
+          },
+          {
+            "fact": "coverage_not_terminated_at_accident"
+          },
+          {
+            "fact": "premium_coverage_at_accident"
+          }
+        ]
+      },
+      "source_refs": [
+        "S_START",
+        "S_END",
+        "S_PERIOD",
+        "S_PREMIUM"
+      ]
+    },
+    {
+      "id": "RULE_EXCLUSIONS",
+      "label": "是否存在适用免责",
+      "condition": {
+        "op": "any",
+        "args": [
+          {
+            "rule": "EX01"
+          },
+          {
+            "rule": "EX02"
+          },
+          {
+            "rule": "EX03"
+          },
+          {
+            "rule": "EX04"
+          },
+          {
+            "rule": "EX05"
+          },
+          {
+            "rule": "EX06"
+          },
+          {
+            "rule": "EX07"
+          },
+          {
+            "rule": "EX08"
+          },
+          {
+            "rule": "EX09"
+          },
+          {
+            "rule": "EX10"
+          },
+          {
+            "rule": "EX11"
+          },
+          {
+            "rule": "EX12"
+          },
+          {
+            "rule": "EX13"
+          },
+          {
+            "rule": "EX14"
+          },
+          {
+            "rule": "EX15"
+          },
+          {
+            "rule": "EX16"
+          }
+        ]
+      },
+      "source_refs": [
+        "S_EXCLUSION",
+        "S_EX01",
+        "S_EX02",
+        "S_EX03",
+        "S_EX04",
+        "S_EX05",
+        "S_EX06",
+        "S_EX07",
+        "S_EX08",
+        "S_EX09",
+        "S_EX10",
+        "S_EX11",
+        "S_EX12",
+        "S_EX13",
+        "S_EX14",
+        "S_EX15",
+        "S_EX16"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "ENTRY_INSURANCE",
+      "kind": "entry",
+      "label": "借款人意外险局部核对入口",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "next": "IDENTITY"
+    },
+    {
+      "id": "IDENTITY",
+      "kind": "decision",
+      "label": "确认被保险人与保单",
+      "source_refs": [
+        "S_CONTRACT",
+        "S_ELIGIBILITY"
+      ],
+      "condition": {
+        "fact": "insured_policy_match"
+      },
+      "routes": {
+        "true": "TERMS_REVIEW",
+        "false": "OUT_IDENTITY_REVIEW",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "TERMS_REVIEW",
+      "kind": "decision",
+      "label": "关联约定及告知效力核实",
+      "source_refs": [
+        "S_CONTRACT",
+        "S_DISCLOSURE",
+        "S_LAW"
+      ],
+      "condition": {
+        "fact": "contract_terms_reviewed_no_block"
+      },
+      "routes": {
+        "true": "C01",
+        "false": "OUT_NEEDS_REVIEW",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "C01",
+      "kind": "decision",
+      "label": "事故时保险责任有效",
+      "source_refs": [
+        "S_START",
+        "S_END",
+        "S_PERIOD",
+        "S_PREMIUM"
+      ],
+      "condition": {
+        "rule": "RULE_COVERAGE"
+      },
+      "routes": {
+        "true": "DEFINITION_REVIEW",
+        "false": "OUT_COVERAGE_FAIL",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "DEFINITION_REVIEW",
+      "kind": "decision",
+      "label": "处理定义与例外交叉争议",
+      "source_refs": [
+        "S_ACCIDENT",
+        "S_EX03",
+        "S_EX10"
+      ],
+      "condition": {
+        "fact": "definition_interaction_resolved"
+      },
+      "routes": {
+        "true": "C02",
+        "false": "OUT_NEEDS_REVIEW",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "C02",
+      "kind": "decision",
+      "label": "符合意外定义",
+      "source_refs": [
+        "S_ACCIDENT"
+      ],
+      "condition": {
+        "rule": "RULE_ACCIDENT"
+      },
+      "routes": {
+        "true": "C03",
+        "false": "OUT_ACCIDENT_FAIL",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "C03",
+      "kind": "decision",
+      "label": "同一事故的因果关系",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "condition": {
+        "fact": "same_accident_caused_claimed_outcome"
+      },
+      "routes": {
+        "true": "X01",
+        "false": "OUT_CAUSATION_FAIL",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "X01",
+      "kind": "decision",
+      "label": "核查16项免责及局部例外",
+      "source_refs": [
+        "S_EXCLUSION"
+      ],
+      "condition": {
+        "rule": "RULE_EXCLUSIONS"
+      },
+      "routes": {
+        "true": "OUT_EXCLUDED",
+        "false": "B01",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "B01",
+      "kind": "switch",
+      "label": "选择责任",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "selector": {
+        "fact": "benefit_type"
+      },
+      "cases": {
+        "death": "D01",
+        "disability": "A01"
+      },
+      "on_unknown": "OUT_NEEDS_INPUT",
+      "on_review": "OUT_NEEDS_REVIEW"
+    },
+    {
+      "id": "D01",
+      "kind": "switch",
+      "label": "选择身故路径",
+      "source_refs": [
+        "E_DEATH",
+        "E_DECLARED"
+      ],
+      "selector": {
+        "fact": "death_mode"
+      },
+      "cases": {
+        "ordinary": "D02",
+        "declared": "D03"
+      },
+      "on_unknown": "OUT_NEEDS_INPUT",
+      "on_review": "OUT_NEEDS_REVIEW"
+    },
+    {
+      "id": "D02",
+      "kind": "decision",
+      "label": "普通身故与180日条件",
+      "source_refs": [
+        "E_DEATH"
+      ],
+      "condition": {
+        "op": "all",
+        "args": [
+          {
+            "fact": "actual_death_occurred"
+          },
+          {
+            "fact": "death_within_180_days"
+          }
+        ]
+      },
+      "routes": {
+        "true": "D04",
+        "false": "OUT_DEATH_FAIL",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      },
+      "on_true_effects": [
+        {
+          "kind": "liability",
+          "status": "local_conditions_passed",
+          "source_refs": [
+            "E_DEATH",
+            "E_DECLARED"
+          ],
+          "responsibility_id": "RESP_DEATH"
+        },
+        {
+          "kind": "insured_coverage_status",
+          "status": "termination_stated",
+          "source_refs": [
+            "E_DEATH"
+          ],
+          "note": "原文规定对该被保险人的保险责任终止；不推定付款完成才终止，不自动否定既存请求权。"
+        }
+      ]
+    },
+    {
+      "id": "D03",
+      "kind": "decision",
+      "label": "意外后下落不明并经法院宣告死亡",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "condition": {
+        "op": "all",
+        "args": [
+          {
+            "fact": "missing_since_accident"
+          },
+          {
+            "fact": "court_declared_death"
+          }
+        ]
+      },
+      "routes": {
+        "true": "D05",
+        "false": "OUT_DECLARED_FAIL",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "D05",
+      "kind": "decision",
+      "label": "宣告死亡后是否生还",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "condition": {
+        "fact": "returned_alive"
+      },
+      "routes": {
+        "true": "D06",
+        "false": "DECLARED_PASS",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "DECLARED_PASS",
+      "kind": "entry",
+      "label": "宣告死亡责任条件通过",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "next": "D07",
+      "effects": [
+        {
+          "kind": "liability",
+          "status": "local_conditions_passed",
+          "source_refs": [
+            "E_DEATH",
+            "E_DECLARED"
+          ],
+          "responsibility_id": "RESP_DEATH"
+        }
+      ]
+    },
+    {
+      "id": "D04",
+      "kind": "calculation",
+      "label": "意外身故保险金",
+      "source_refs": [
+        "E_DEATH",
+        "E_OFFSET",
+        "E_TOTAL",
+        "E_LIMIT"
+      ],
+      "formula": {
+        "op": "min",
+        "args": [
+          {
+            "op": "max",
+            "args": [
+              {
+                "literal": "0"
+              },
+              {
+                "op": "subtract",
+                "args": [
+                  {
+                    "var": "sum_insured"
+                  },
+                  {
+                    "var": "prior_disability_benefit"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "var": "remaining_limit"
+          }
+        ]
+      },
+      "output_key": "assessed_benefit_amount",
+      "next": "BENEFICIARY",
+      "on_unknown": "OUT_AMOUNT_PENDING",
+      "on_review": "OUT_NEEDS_REVIEW",
+      "depends_on": [
+        {
+          "id": "D04_OFFSET",
+          "relation": "paid_benefit_offset",
+          "target_type": "responsibility",
+          "target_id": "RESP_DISABILITY",
+          "read_mode": "historical_snapshot",
+          "required_outputs": [
+            "paid_records",
+            "records_complete"
+          ],
+          "scope": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "snapshot_id": "$case.payment_history_snapshot_id",
+            "same_accident_required": false,
+            "scope_review": "依据本合同、同一被保险人核查；原文未把扣减限定为同一事故，特别约定或记录范围有争议时人工核定。"
+          },
+          "select": {
+            "payment_status": [
+              "paid"
+            ],
+            "accounting_review_status": "confirmed",
+            "paid_before": "$case.death_date",
+            "deduplicate_by": "payment_id",
+            "temporal_boundary_must_be_confirmed": true
+          },
+          "aggregation": {
+            "operation": "sum",
+            "field": "amount",
+            "currency": "$case.currency"
+          },
+          "bindings": {
+            "prior_disability_benefit": "aggregation.result"
+          },
+          "on_confirmed_empty": {
+            "status": "resolved",
+            "value": "0",
+            "requires": "records_complete=true且作用域、时间边界及冲销等事项已核实"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "on_conflict": {
+            "status": "manual_review",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "时间、记录范围或冲销口径存在争议"
+          },
+          "source": [
+            "2.1.1",
+            "2.1.2"
+          ],
+          "effect": "读取伤残责任已付金额并从身故金基准保额扣除；不要求伤残责任成立或先有伤残赔付。",
+          "source_refs": [
+            "E_OFFSET"
+          ]
+        },
+        {
+          "id": "D04_AMOUNT",
+          "relation": "amount_basis",
+          "target_type": "amount_rule",
+          "target_id": "AMOUNT01",
+          "read_mode": "evaluate_rule",
+          "required_outputs": [
+            "sum_insured_at_date"
+          ],
+          "parameters": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "responsibility_id": "RESP_DEATH",
+            "valuation_date": "$case.death_date"
+          },
+          "bindings": {
+            "sum_insured": "sum_insured_at_date"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "source": [
+            "2.3"
+          ],
+          "source_refs": [
+            "E_AMOUNT"
+          ]
+        },
+        {
+          "id": "D04_LIMIT",
+          "relation": "shared_limit",
+          "target_type": "shared_rule",
+          "target_id": "LIMIT01",
+          "read_mode": "evaluate_rule",
+          "required_outputs": [
+            "remaining_limit"
+          ],
+          "parameters": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "snapshot_id": "$case.payment_history_snapshot_id"
+          },
+          "bindings": {
+            "remaining_limit": "remaining_limit"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "source": [
+            "2.1",
+            "2.3"
+          ],
+          "source_refs": [
+            "E_TOTAL",
+            "E_LIMIT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D07",
+      "kind": "calculation",
+      "label": "宣告死亡保险金",
+      "source_refs": [
+        "E_DECLARED",
+        "E_OFFSET",
+        "E_TOTAL",
+        "E_LIMIT"
+      ],
+      "formula": {
+        "op": "min",
+        "args": [
+          {
+            "op": "max",
+            "args": [
+              {
+                "literal": "0"
+              },
+              {
+                "op": "subtract",
+                "args": [
+                  {
+                    "var": "sum_insured"
+                  },
+                  {
+                    "var": "prior_disability_benefit"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "var": "remaining_limit"
+          }
+        ]
+      },
+      "output_key": "assessed_benefit_amount",
+      "next": "BENEFICIARY",
+      "on_unknown": "OUT_AMOUNT_PENDING",
+      "on_review": "OUT_NEEDS_REVIEW",
+      "depends_on": [
+        {
+          "id": "D07_OFFSET",
+          "relation": "paid_benefit_offset",
+          "target_type": "responsibility",
+          "target_id": "RESP_DISABILITY",
+          "read_mode": "historical_snapshot",
+          "required_outputs": [
+            "paid_records",
+            "records_complete"
+          ],
+          "scope": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "snapshot_id": "$case.payment_history_snapshot_id",
+            "same_accident_required": false,
+            "scope_review": "依据本合同、同一被保险人核查；原文未把扣减限定为同一事故，特别约定或记录范围有争议时人工核定。"
+          },
+          "select": {
+            "payment_status": [
+              "paid"
+            ],
+            "accounting_review_status": "confirmed",
+            "paid_before": "$case.court_declared_death_date",
+            "deduplicate_by": "payment_id",
+            "temporal_boundary_must_be_confirmed": true
+          },
+          "aggregation": {
+            "operation": "sum",
+            "field": "amount",
+            "currency": "$case.currency"
+          },
+          "bindings": {
+            "prior_disability_benefit": "aggregation.result"
+          },
+          "on_confirmed_empty": {
+            "status": "resolved",
+            "value": "0",
+            "requires": "records_complete=true且作用域、时间边界及冲销等事项已核实"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "on_conflict": {
+            "status": "manual_review",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "时间、记录范围或冲销口径存在争议"
+          },
+          "source": [
+            "2.1.1",
+            "2.1.2"
+          ],
+          "effect": "读取伤残责任已付金额并从身故金基准保额扣除；不要求伤残责任成立或先有伤残赔付。",
+          "source_refs": [
+            "E_OFFSET"
+          ]
+        },
+        {
+          "id": "D07_AMOUNT",
+          "relation": "amount_basis",
+          "target_type": "amount_rule",
+          "target_id": "AMOUNT01",
+          "read_mode": "evaluate_rule",
+          "required_outputs": [
+            "sum_insured_at_date"
+          ],
+          "parameters": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "responsibility_id": "RESP_DEATH",
+            "valuation_date": "$case.court_declared_death_date"
+          },
+          "bindings": {
+            "sum_insured": "sum_insured_at_date"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "source": [
+            "2.3"
+          ],
+          "source_refs": [
+            "E_AMOUNT"
+          ]
+        },
+        {
+          "id": "D07_LIMIT",
+          "relation": "shared_limit",
+          "target_type": "shared_rule",
+          "target_id": "LIMIT01",
+          "read_mode": "evaluate_rule",
+          "required_outputs": [
+            "remaining_limit"
+          ],
+          "parameters": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "snapshot_id": "$case.payment_history_snapshot_id"
+          },
+          "bindings": {
+            "remaining_limit": "remaining_limit"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "source": [
+            "2.1",
+            "2.3"
+          ],
+          "source_refs": [
+            "E_TOTAL",
+            "E_LIMIT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A01",
+      "kind": "decision",
+      "label": "判断是否适用第180日身体情况评定",
+      "source_refs": [
+        "E_DISABILITY"
+      ],
+      "condition": {
+        "fact": "treatment_unfinished_day180"
+      },
+      "routes": {
+        "true": "A04",
+        "false": "A02",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "A02",
+      "kind": "decision",
+      "label": "180日内是否造成标准所列伤残",
+      "source_refs": [
+        "E_DISABILITY",
+        "S_STANDARD"
+      ],
+      "condition": {
+        "fact": "listed_disability_within180"
+      },
+      "routes": {
+        "true": "A05",
+        "false": "OUT_DISABILITY_FAIL",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "A04",
+      "kind": "decision",
+      "label": "按第180日情况是否构成标准所列伤残",
+      "source_refs": [
+        "E_DISABILITY",
+        "S_STANDARD"
+      ],
+      "condition": {
+        "fact": "listed_disability_at_day180"
+      },
+      "routes": {
+        "true": "A05",
+        "false": "OUT_DISABILITY_FAIL",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "A05",
+      "kind": "decision",
+      "label": "鉴定和标准版本核验",
+      "source_refs": [
+        "S_STANDARD",
+        "S_DISABILITY_DOCS"
+      ],
+      "condition": {
+        "fact": "assessment_evidence_valid"
+      },
+      "routes": {
+        "true": "A_MULTI",
+        "false": "OUT_NEEDS_REVIEW",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "A_MULTI",
+      "kind": "decision",
+      "label": "是否同一事故多处伤残",
+      "source_refs": [
+        "S_MULTI"
+      ],
+      "condition": {
+        "fact": "multiple_disabilities"
+      },
+      "routes": {
+        "true": "A_MULTI_REVIEW",
+        "false": "A_ASSESSMENT_PASS",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "A_MULTI_REVIEW",
+      "kind": "decision",
+      "label": "多处伤残合并原则已正确适用",
+      "source_refs": [
+        "S_MULTI",
+        "S_STANDARD"
+      ],
+      "condition": {
+        "fact": "multiple_assessment_applied"
+      },
+      "routes": {
+        "true": "A_ASSESSMENT_PASS",
+        "false": "OUT_NEEDS_REVIEW",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "A_ASSESSMENT_PASS",
+      "kind": "entry",
+      "label": "伤残责任条件核对通过",
+      "source_refs": [
+        "E_DISABILITY"
+      ],
+      "next": "A06",
+      "effects": [
+        {
+          "kind": "liability",
+          "status": "local_conditions_passed",
+          "source_refs": [
+            "E_DISABILITY"
+          ],
+          "responsibility_id": "RESP_DISABILITY"
+        }
+      ]
+    },
+    {
+      "id": "A06",
+      "kind": "decision",
+      "label": "本次事故前是否已有残疾",
+      "source_refs": [
+        "S_PRIOR"
+      ],
+      "condition": {
+        "fact": "preexisting_disability"
+      },
+      "routes": {
+        "true": "A07",
+        "false": "A08",
+        "unknown": "OUT_NEEDS_INPUT",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "A07",
+      "kind": "calculation",
+      "label": "既有残疾比例差额计算",
+      "source_refs": [
+        "S_PRIOR",
+        "S_STANDARD"
+      ],
+      "formula": {
+        "op": "multiply",
+        "args": [
+          {
+            "op": "subtract",
+            "args": [
+              {
+                "fact": "combined_ratio"
+              },
+              {
+                "fact": "prior_ratio"
+              }
+            ]
+          },
+          {
+            "var": "sum_insured"
+          }
+        ]
+      },
+      "output_key": "current_disability_amount",
+      "next": "A09",
+      "on_unknown": "OUT_AMOUNT_PENDING",
+      "on_review": "OUT_NEEDS_REVIEW",
+      "depends_on": [
+        {
+          "id": "A07_AMOUNT",
+          "relation": "amount_basis",
+          "target_type": "amount_rule",
+          "target_id": "AMOUNT01",
+          "read_mode": "evaluate_rule",
+          "required_outputs": [
+            "sum_insured_at_date"
+          ],
+          "parameters": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "responsibility_id": "RESP_DISABILITY",
+            "valuation_date": "$case.accident_date"
+          },
+          "bindings": {
+            "sum_insured": "sum_insured_at_date"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "source": [
+            "2.3"
+          ],
+          "source_refs": [
+            "E_AMOUNT"
+          ]
+        }
+      ],
+      "guard": {
+        "op": "gte",
+        "args": [
+          {
+            "fact": "combined_ratio"
+          },
+          {
+            "fact": "prior_ratio"
+          }
+        ]
+      }
+    },
+    {
+      "id": "A08",
+      "kind": "calculation",
+      "label": "无既有残疾的比例计算",
+      "source_refs": [
+        "E_DISABILITY",
+        "S_STANDARD"
+      ],
+      "formula": {
+        "op": "multiply",
+        "args": [
+          {
+            "fact": "disability_ratio"
+          },
+          {
+            "var": "sum_insured"
+          }
+        ]
+      },
+      "output_key": "current_disability_amount",
+      "next": "A09",
+      "on_unknown": "OUT_AMOUNT_PENDING",
+      "on_review": "OUT_NEEDS_REVIEW",
+      "depends_on": [
+        {
+          "id": "A08_AMOUNT",
+          "relation": "amount_basis",
+          "target_type": "amount_rule",
+          "target_id": "AMOUNT01",
+          "read_mode": "evaluate_rule",
+          "required_outputs": [
+            "sum_insured_at_date"
+          ],
+          "parameters": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "responsibility_id": "RESP_DISABILITY",
+            "valuation_date": "$case.accident_date"
+          },
+          "bindings": {
+            "sum_insured": "sum_insured_at_date"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "source": [
+            "2.3"
+          ],
+          "source_refs": [
+            "E_AMOUNT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A09",
+      "kind": "calculation",
+      "label": "按共享限额核算伤残金",
+      "source_refs": [
+        "E_TOTAL",
+        "E_LIMIT"
+      ],
+      "formula": {
+        "op": "min",
+        "args": [
+          {
+            "var": "current_disability_amount"
+          },
+          {
+            "var": "remaining_limit"
+          }
+        ]
+      },
+      "output_key": "assessed_benefit_amount",
+      "next": "BENEFICIARY",
+      "on_unknown": "OUT_AMOUNT_PENDING",
+      "on_review": "OUT_NEEDS_REVIEW",
+      "depends_on": [
+        {
+          "id": "A09_LIMIT",
+          "relation": "shared_limit",
+          "target_type": "shared_rule",
+          "target_id": "LIMIT01",
+          "read_mode": "evaluate_rule",
+          "required_outputs": [
+            "remaining_limit"
+          ],
+          "parameters": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "snapshot_id": "$case.payment_history_snapshot_id"
+          },
+          "bindings": {
+            "remaining_limit": "remaining_limit"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "source": [
+            "2.1",
+            "2.3"
+          ],
+          "source_refs": [
+            "E_TOTAL",
+            "E_LIMIT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BENEFICIARY",
+      "kind": "decision",
+      "label": "当前受益人是否失权",
+      "source_refs": [
+        "S_BENEFICIARY"
+      ],
+      "condition": {
+        "fact": "beneficiary_disqualified"
+      },
+      "routes": {
+        "true": "OUT_RECIPIENT_REVIEW",
+        "false": "RECIPIENT",
+        "unknown": "OUT_RECIPIENT_PENDING",
+        "review": "OUT_NEEDS_REVIEW"
+      },
+      "on_true_effects": [
+        {
+          "kind": "beneficiary_right",
+          "status": "disqualified",
+          "source_refs": [
+            "S_BENEFICIARY"
+          ],
+          "recipient": "current_beneficiary"
+        }
+      ]
+    },
+    {
+      "id": "RECIPIENT",
+      "kind": "decision",
+      "label": "实际受领人与份额已确定",
+      "source_refs": [
+        "S_BENEFICIARY",
+        "S_APPLICANT"
+      ],
+      "condition": {
+        "fact": "recipient_allocation_resolved"
+      },
+      "routes": {
+        "true": "PREMIUM_SETTLEMENT",
+        "false": "OUT_RECIPIENT_REVIEW",
+        "unknown": "OUT_RECIPIENT_PENDING",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "PREMIUM_SETTLEMENT",
+      "kind": "decision",
+      "label": "分期保费补交等给付条件已满足",
+      "source_refs": [
+        "S_PREMIUM"
+      ],
+      "condition": {
+        "fact": "installment_topup_satisfied"
+      },
+      "routes": {
+        "true": "OUT_LOCAL_PASS",
+        "false": "OUT_TOPUP_PENDING",
+        "unknown": "OUT_SETTLEMENT_PENDING",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "D06",
+      "kind": "calculation",
+      "label": "读取原宣告死亡已付金额",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "formula": {
+        "var": "paid_death_benefit"
+      },
+      "output_key": "paid_death_benefit",
+      "next": "REFUND_PAID",
+      "on_unknown": "OUT_REFUND_PENDING",
+      "on_review": "OUT_NEEDS_REVIEW",
+      "depends_on": [
+        {
+          "id": "D06_REFUND",
+          "relation": "refund_basis",
+          "target_type": "responsibility",
+          "target_id": "RESP_DEATH",
+          "read_mode": "historical_snapshot",
+          "required_outputs": [
+            "paid_records",
+            "records_complete"
+          ],
+          "scope": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "snapshot_id": "$case.payment_history_snapshot_id",
+            "same_accident_required": false,
+            "scope_review": "仅查询本次宣告死亡已支付的身故金；返还已履行、部分返还等情形需核实，不重复索回。",
+            "claim_id": "$case.declared_death_claim_id"
+          },
+          "select": {
+            "payment_status": [
+              "paid"
+            ],
+            "accounting_review_status": "confirmed",
+            "paid_before": "$case.refund_review_at",
+            "deduplicate_by": "payment_id",
+            "temporal_boundary_must_be_confirmed": true
+          },
+          "aggregation": {
+            "operation": "sum",
+            "field": "amount",
+            "currency": "$case.currency"
+          },
+          "bindings": {
+            "paid_death_benefit": "aggregation.result"
+          },
+          "on_confirmed_empty": {
+            "status": "resolved",
+            "value": "0",
+            "requires": "records_complete=true且作用域、时间边界及冲销等事项已核实"
+          },
+          "on_missing": {
+            "status": "refund_amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "宣告死亡已付金额或返还履行情况未核实"
+          },
+          "on_conflict": {
+            "status": "manual_review",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "时间、记录范围或冲销口径存在争议"
+          },
+          "source": [
+            "2.1.1"
+          ],
+          "effect": "仅在已给付的范围内形成返还义务；无已付款时返还金额为零。",
+          "source_refs": [
+            "E_DECLARED"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "REFUND_PAID",
+      "kind": "decision",
+      "label": "是否存在应核查返还的原付款",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "condition": {
+        "op": "gt",
+        "args": [
+          {
+            "var": "paid_death_benefit"
+          },
+          {
+            "literal": "0"
+          }
+        ]
+      },
+      "routes": {
+        "true": "REFUND_REVIEW",
+        "false": "OUT_NO_REFUND",
+        "unknown": "OUT_REFUND_PENDING",
+        "review": "OUT_NEEDS_REVIEW"
+      },
+      "on_true_effects": [
+        {
+          "kind": "refund_obligation",
+          "status": "stated",
+          "source_refs": [
+            "E_DECLARED"
+          ],
+          "amount_key": "paid_death_benefit",
+          "deadline": {
+            "value": 30,
+            "unit": "day",
+            "anchor": "知道或应当知道生还之日",
+            "boundary": "外部核实"
+          },
+          "recipient": "insurance_company"
+        }
+      ]
+    },
+    {
+      "id": "REFUND_REVIEW",
+      "kind": "decision",
+      "label": "已履行返还及冲销情况已确认",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "condition": {
+        "fact": "refund_accounting_confirmed"
+      },
+      "routes": {
+        "true": "REFUND_CALC",
+        "false": "OUT_NEEDS_REVIEW",
+        "unknown": "OUT_REFUND_PENDING",
+        "review": "OUT_NEEDS_REVIEW"
+      }
+    },
+    {
+      "id": "REFUND_CALC",
+      "kind": "calculation",
+      "label": "核对尚未履行的返还余额",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "formula": {
+        "op": "subtract",
+        "args": [
+          {
+            "var": "paid_death_benefit"
+          },
+          {
+            "fact": "already_refunded"
+          }
+        ]
+      },
+      "output_key": "refund_remaining",
+      "next": "OUT_REFUND",
+      "on_unknown": "OUT_REFUND_PENDING",
+      "on_review": "OUT_NEEDS_REVIEW",
+      "depends_on": [],
+      "guard": {
+        "op": "gte",
+        "args": [
+          {
+            "var": "paid_death_benefit"
+          },
+          {
+            "fact": "already_refunded"
+          }
+        ]
+      }
+    },
+    {
+      "id": "OUT_COVERAGE_FAIL",
+      "kind": "outcome",
+      "label": "事故时保障前提不成立",
+      "source_refs": [
+        "E_TOTAL",
+        "S_PERIOD",
+        "S_PREMIUM"
+      ],
+      "code": "LOCAL_FAIL",
+      "effects": [
+        {
+          "kind": "liability",
+          "status": "local_condition_failed",
+          "source_refs": [
+            "E_TOTAL",
+            "S_PERIOD",
+            "S_PREMIUM"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_ACCIDENT_FAIL",
+      "kind": "outcome",
+      "label": "经核实不符合意外定义",
+      "source_refs": [
+        "S_ACCIDENT"
+      ],
+      "code": "LOCAL_FAIL",
+      "effects": [
+        {
+          "kind": "liability",
+          "status": "local_condition_failed",
+          "source_refs": [
+            "S_ACCIDENT"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_CAUSATION_FAIL",
+      "kind": "outcome",
+      "label": "经核实因果条件不成立",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "code": "LOCAL_FAIL",
+      "effects": [
+        {
+          "kind": "liability",
+          "status": "local_condition_failed",
+          "source_refs": [
+            "E_TOTAL"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_DEATH_FAIL",
+      "kind": "outcome",
+      "label": "普通意外身故路径条件不成立",
+      "source_refs": [
+        "E_DEATH"
+      ],
+      "code": "LOCAL_FAIL",
+      "effects": [
+        {
+          "kind": "liability",
+          "status": "local_condition_failed",
+          "source_refs": [
+            "E_DEATH"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_DECLARED_FAIL",
+      "kind": "outcome",
+      "label": "宣告死亡路径条件不成立",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "code": "LOCAL_FAIL",
+      "effects": [
+        {
+          "kind": "liability",
+          "status": "local_condition_failed",
+          "source_refs": [
+            "E_DECLARED"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_DISABILITY_FAIL",
+      "kind": "outcome",
+      "label": "适用评定路径下未构成标准所列伤残",
+      "source_refs": [
+        "E_DISABILITY"
+      ],
+      "code": "LOCAL_FAIL",
+      "effects": [
+        {
+          "kind": "liability",
+          "status": "local_condition_failed",
+          "source_refs": [
+            "E_DISABILITY"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_EXCLUDED",
+      "kind": "outcome",
+      "label": "存在适用免责",
+      "source_refs": [
+        "S_EXCLUSION"
+      ],
+      "code": "LOCAL_FAIL",
+      "effects": [
+        {
+          "kind": "liability",
+          "status": "excluded",
+          "source_refs": [
+            "S_EXCLUSION"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_NEEDS_INPUT",
+      "kind": "outcome",
+      "label": "必要事实尚缺失",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "code": "NEEDS_INPUT",
+      "effects": [],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_NEEDS_REVIEW",
+      "kind": "outcome",
+      "label": "事实冲突、无效输入或适用口径需核定",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "code": "NEEDS_REVIEW",
+      "effects": [],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_IDENTITY_REVIEW",
+      "kind": "outcome",
+      "label": "被保险人或合同对应关系需核查",
+      "source_refs": [
+        "S_CONTRACT"
+      ],
+      "code": "NEEDS_REVIEW",
+      "effects": [],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_AMOUNT_PENDING",
+      "kind": "outcome",
+      "label": "责任局部结论保留，金额待核定",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "code": "NEEDS_INPUT",
+      "effects": [
+        {
+          "kind": "benefit_amount",
+          "status": "pending",
+          "source_refs": [
+            "E_AMOUNT"
+          ],
+          "amount_key": null
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_RECIPIENT_REVIEW",
+      "kind": "outcome",
+      "label": "责任及已算金额保留，受领人需复核",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "code": "NEEDS_REVIEW",
+      "effects": [
+        {
+          "kind": "benefit_amount",
+          "status": "assessed_only",
+          "source_refs": [
+            "E_AMOUNT"
+          ],
+          "amount_key": "assessed_benefit_amount"
+        },
+        {
+          "kind": "recipient",
+          "status": "unresolved",
+          "source_refs": [
+            "S_BENEFICIARY"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_RECIPIENT_PENDING",
+      "kind": "outcome",
+      "label": "责任及已算金额保留，受领人资料不足",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "code": "NEEDS_INPUT",
+      "effects": [
+        {
+          "kind": "benefit_amount",
+          "status": "assessed_only",
+          "source_refs": [
+            "E_AMOUNT"
+          ],
+          "amount_key": "assessed_benefit_amount"
+        },
+        {
+          "kind": "recipient",
+          "status": "unresolved",
+          "source_refs": [
+            "S_BENEFICIARY"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_TOPUP_PENDING",
+      "kind": "outcome",
+      "label": "责任及已算金额保留，待履行补交保费条件",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "code": "SETTLEMENT_PENDING",
+      "effects": [
+        {
+          "kind": "benefit_amount",
+          "status": "assessed_only",
+          "source_refs": [
+            "E_AMOUNT"
+          ],
+          "amount_key": "assessed_benefit_amount"
+        },
+        {
+          "kind": "premium_obligation",
+          "status": "pending",
+          "source_refs": [
+            "S_PREMIUM"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_SETTLEMENT_PENDING",
+      "kind": "outcome",
+      "label": "给付条件资料待核实",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "code": "SETTLEMENT_PENDING",
+      "effects": [
+        {
+          "kind": "benefit_amount",
+          "status": "assessed_only",
+          "source_refs": [
+            "E_AMOUNT"
+          ],
+          "amount_key": "assessed_benefit_amount"
+        },
+        {
+          "kind": "premium_obligation",
+          "status": "pending",
+          "source_refs": [
+            "S_PREMIUM"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_LOCAL_PASS",
+      "kind": "outcome",
+      "label": "局部责任、金额与列明给付条件通过",
+      "source_refs": [
+        "E_TOTAL"
+      ],
+      "code": "LOCAL_PASS",
+      "effects": [
+        {
+          "kind": "benefit_amount",
+          "status": "assessed_only",
+          "source_refs": [
+            "E_TOTAL"
+          ],
+          "amount_key": "assessed_benefit_amount"
+        },
+        {
+          "kind": "payment",
+          "status": "not_executed",
+          "source_refs": [
+            "E_TOTAL"
+          ]
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_REFUND_PENDING",
+      "kind": "outcome",
+      "label": "返还基数或履行记录未齐",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "code": "NEEDS_INPUT",
+      "effects": [],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_NO_REFUND",
+      "kind": "outcome",
+      "label": "完整记录确认原宣告死亡无已付款",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "code": "LOCAL_PASS",
+      "effects": [
+        {
+          "kind": "refund_obligation",
+          "status": "no_paid_amount",
+          "source_refs": [
+            "E_DECLARED"
+          ],
+          "amount_key": "paid_death_benefit"
+        }
+      ],
+      "preserve_prior_effects": true
+    },
+    {
+      "id": "OUT_REFUND",
+      "kind": "outcome",
+      "label": "返还金额局部核对完成",
+      "source_refs": [
+        "E_DECLARED"
+      ],
+      "code": "LOCAL_PASS",
+      "effects": [
+        {
+          "kind": "refund_amount",
+          "status": "assessed_only",
+          "source_refs": [
+            "E_DECLARED"
+          ],
+          "amount_key": "refund_remaining",
+          "recipient": "insurance_company"
+        }
+      ],
+      "preserve_prior_effects": true
+    }
+  ],
+  "responsibilities": [
+    {
+      "id": "RESP_DEATH",
+      "name": "意外身故保险责任",
+      "source": [
+        "2.1.1"
+      ],
+      "entry_node": "D01",
+      "node_ids": [
+        "D01",
+        "D02",
+        "D03",
+        "D05",
+        "DECLARED_PASS",
+        "D04",
+        "D07",
+        "D06"
+      ],
+      "calculation_nodes": [
+        "D04",
+        "D07"
+      ],
+      "shared_limit_id": "LIMIT01",
+      "output_provider": "payment_history",
+      "outputs": {
+        "paid_records": "来自payment_history中本责任的历史记录，非当前节点试算值。",
+        "records_complete": "相应保单、被保险人及时间范围的给付记录是否已核实完整。"
+      },
+      "notes": "普通意外身故与宣告死亡为本责任中的两条适用路径，不建立两个独立保额池。",
+      "depends_on_relation_ids": [
+        "REL_DEATH_OFFSET_DISABILITY"
+      ],
+      "affects_relation_ids": [],
+      "shared_relation_ids": [
+        "REL_SHARED_AGGREGATE_LIMIT"
+      ],
+      "source_refs": [
+        "E_DEATH",
+        "E_DECLARED",
+        "E_OFFSET"
+      ]
+    },
+    {
+      "id": "RESP_DISABILITY",
+      "name": "意外伤残保险责任",
+      "source": [
+        "2.1.2"
+      ],
+      "entry_node": "A01",
+      "node_ids": [
+        "A01",
+        "A02",
+        "A04",
+        "A05",
+        "A_MULTI",
+        "A_MULTI_REVIEW",
+        "A_ASSESSMENT_PASS",
+        "A06",
+        "A07",
+        "A08",
+        "A09"
+      ],
+      "calculation_nodes": [
+        "A07",
+        "A08",
+        "A09"
+      ],
+      "shared_limit_id": "LIMIT01",
+      "output_provider": "payment_history",
+      "outputs": {
+        "paid_records": "来自payment_history中本责任的历史记录，非当前节点试算值。",
+        "records_complete": "相应保单、被保险人及时间范围的给付记录是否已核实完整。"
+      },
+      "notes": "是否存在既有残疾，与本合同是否已付伤残金是不同事实。伤残鉴定比例不是历史已付金额。",
+      "depends_on_relation_ids": [],
+      "affects_relation_ids": [
+        "REL_DEATH_OFFSET_DISABILITY"
+      ],
+      "shared_relation_ids": [
+        "REL_SHARED_AGGREGATE_LIMIT"
+      ],
+      "source_refs": [
+        "E_DISABILITY",
+        "S_MULTI",
+        "S_PRIOR"
+      ]
+    }
+  ],
+  "responsibility_relations": [
+    {
+      "id": "REL_DEATH_OFFSET_DISABILITY",
+      "relation": "paid_benefit_offset",
+      "name": "伤残责任的已付保险金减少身故责任给付金额",
+      "from_responsibility_id": "RESP_DEATH",
+      "to_responsibility_id": "RESP_DISABILITY",
+      "direction": "使用方（身故责任） -> 数据提供方（伤残责任）",
+      "consumer_node_ids": [
+        "D04",
+        "D07"
+      ],
+      "dependency_ids": [
+        "D04_OFFSET",
+        "D07_OFFSET"
+      ],
+      "affects": "payable_amount",
+      "is_eligibility_prerequisite": false,
+      "read_mode": "historical_snapshot",
+      "effect": "依据已核实的身故前伤残保险金给付记录，计算身故保险金扣减额；不要求先发生伤残或先获得伤残赔付。",
+      "on_confirmed_no_prior_payment": "扣减额为0，继续核算身故金。",
+      "on_unknown_payment_history": "金额待核定，不把未知记录当0，也不因该项资料缺失直接拒赔。",
+      "source": [
+        "2.1.1",
+        "2.1.2"
+      ],
+      "source_refs": [
+        "E_OFFSET"
+      ]
+    },
+    {
+      "id": "REL_SHARED_AGGREGATE_LIMIT",
+      "relation": "shared_limit",
+      "name": "身故与伤残责任共同占用保险金额上限",
+      "member_responsibility_ids": [
+        "RESP_DEATH",
+        "RESP_DISABILITY"
+      ],
+      "shared_rule_id": "LIMIT01",
+      "consumer_node_ids": [
+        "D04",
+        "D07",
+        "A09"
+      ],
+      "dependency_ids": [
+        "D04_LIMIT",
+        "D07_LIMIT",
+        "A09_LIMIT",
+        "LIMIT01_DEATH",
+        "LIMIT01_DISABILITY"
+      ],
+      "affects": "remaining_limit",
+      "effect": "两项责任的已付金额共同消耗同一累计上限；新增给付不能超出已核实的剩余额度。",
+      "scope": "同一合同、同一被保险人、同一已核实给付快照；累计上限作用时点须经核定。",
+      "eligibility_note": "只表示金额约束。另一责任是否曾给付，不替代当前责任条件、责任终止及既存请求权的独立判断。",
+      "execution_note": "LIMIT01读取历史已付记录，不递归执行身故或伤残当前判断；反向关系索引不参与计算。",
+      "source": [
+        "2.1",
+        "2.3"
+      ],
+      "source_refs": [
+        "E_TOTAL",
+        "E_LIMIT"
+      ]
+    }
+  ],
+  "dependency_contract": {
+    "field": "depends_on",
+    "direction": "使用方 -> 被依赖的责任项或共享规则；与on_true/next等流程跳转是不同关系。",
+    "source_role": "source仅保留条款编号兼容；source_refs指向sources原文；depends_on表示责任或计算依赖。",
+    "target_types": [
+      "responsibility",
+      "shared_rule",
+      "amount_rule"
+    ],
+    "read_modes": {
+      "historical_snapshot": "读取同一案件快照中的已核实历史给付结果，不重新执行目标责任当前的核赔节点。",
+      "evaluate_rule": "取得共享规则或保额规则的结果后，才计算依赖该结果的金额。"
+    },
+    "relation_types": {
+      "paid_benefit_offset": "另一责任项的已付保险金按条款减少本项给付金额，不是本项责任成立前提。",
+      "shared_limit": "不同责任项的给付共同受同一保险金额上限约束。",
+      "limit_consumption": "历史已付金额计入共享限额占用；读取数据，不互相触发责任计算。",
+      "amount_basis": "读取本责任在指定日期的保险金额。",
+      "refund_basis": "返还义务读取已付身故金；属于同一责任内部的付款后义务关联。"
+    },
+    "resolution": [
+      "按target_type/target_id定位responsibilities、shared_rules或amount_rules。",
+      "取得required_outputs，按scope限定同一保单、被保险人、时间边界及案件快照。",
+      "records_complete必须由给付记录核查确认；未提交记录、空数组本身不等于确认无给付。",
+      "按select及aggregation产生bindings中的变量；先核验所有依赖状态，再求值金额表达式。",
+      "出现未知依赖按on_missing保留责任结论、挂起金额；争议按on_conflict进入人工核定。",
+      "仅evaluate_rule参与计算拓扑排序；historical_snapshot读取既有记录，禁止递归调用当前责任判断。"
+    ],
+    "numeric_semantics": "金额以十进制定点数处理，字段值用十进制字符串；同币种计算。缺失、非法数值、负数输入、未核实金额及日期边界均不得默认为零。",
+    "expression_language": {
+      "leaves": [
+        "fact",
+        "var",
+        "literal",
+        "rule"
+      ],
+      "logical_ops": [
+        "all",
+        "any",
+        "not"
+      ],
+      "comparison_ops": [
+        "eq",
+        "gt",
+        "gte",
+        "lte"
+      ],
+      "arithmetic_ops": [
+        "add",
+        "subtract",
+        "multiply",
+        "min",
+        "max"
+      ],
+      "all": "有false则false；全true才true；否则unknown。",
+      "any": "有true则true；全false才false；否则unknown。",
+      "not": "unknown的否定仍是unknown。",
+      "review": "已访问的冲突/无效事实产生review；不转成false或默认0。"
+    },
+    "on_missing_is_not_a_node_id": "依赖on_missing/on_conflict为状态对象；节点on_unknown/on_review为流程目标ID。",
+    "limits": "此文件声明依赖和计算结构；保单/账本读取、事实认定、作用域筛选及完整理赔执行器尚未实现。",
+    "field_naming": "统一使用depends_on（用户所说的depend_on）；不同时维护两个同义字段。",
+    "responsibility_relation_index": {
+      "field": "responsibility_relations",
+      "purpose": "集中查看不同保险责任如何相互影响；计算细节以dependency_ids指向的depends_on为准。",
+      "responsibility_fields": {
+        "depends_on_relation_ids": "本责任读取另一责任数据而受影响的有向关系",
+        "affects_relation_ids": "本责任的数据影响另一责任的有向关系；为同一关系的反向检索，不是反向计算依赖",
+        "shared_relation_ids": "多个责任共同参与的约束关系"
+      },
+      "execution": "关系索引用于审阅与查找，不再单独执行或重复扣减；节点级depends_on承载数据读取和计算绑定。",
+      "scope": "同一责任的宣告死亡返还、保额输入不计作不同责任之间的依赖。"
+    }
+  },
+  "shared_rules": [
+    {
+      "id": "LIMIT01",
+      "name": "同一被保险人两项责任共享保险金额上限",
+      "type": "shared_aggregate_limit",
+      "member_responsibility_ids": [
+        "RESP_DEATH",
+        "RESP_DISABILITY"
+      ],
+      "source": [
+        "2.1",
+        "2.3"
+      ],
+      "depends_on": [
+        {
+          "id": "LIMIT01_DEATH",
+          "relation": "limit_consumption",
+          "target_type": "responsibility",
+          "target_id": "RESP_DEATH",
+          "read_mode": "historical_snapshot",
+          "required_outputs": [
+            "paid_records",
+            "records_complete"
+          ],
+          "scope": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "snapshot_id": "$case.payment_history_snapshot_id",
+            "same_accident_required": false,
+            "scope_review": "本合同、同一被保险人的已付记录；不要仅按本次事故过滤。退款、冲销及同案重算需先核定。"
+          },
+          "select": {
+            "payment_status": [
+              "paid"
+            ],
+            "accounting_review_status": "confirmed",
+            "paid_before": "$case.settlement_snapshot_at",
+            "deduplicate_by": "payment_id",
+            "temporal_boundary_must_be_confirmed": true,
+            "exclude_new_payment_being_calculated": true
+          },
+          "aggregation": {
+            "operation": "sum",
+            "field": "amount",
+            "currency": "$case.currency"
+          },
+          "bindings": {
+            "prior_death_paid": "aggregation.result"
+          },
+          "on_confirmed_empty": {
+            "status": "resolved",
+            "value": "0",
+            "requires": "records_complete=true且作用域、时间边界及冲销等事项已核实"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "on_conflict": {
+            "status": "manual_review",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "时间、记录范围或冲销口径存在争议"
+          },
+          "source": [
+            "2.1",
+            "2.3"
+          ],
+          "source_refs": [
+            "E_TOTAL",
+            "E_LIMIT"
+          ]
+        },
+        {
+          "id": "LIMIT01_DISABILITY",
+          "relation": "limit_consumption",
+          "target_type": "responsibility",
+          "target_id": "RESP_DISABILITY",
+          "read_mode": "historical_snapshot",
+          "required_outputs": [
+            "paid_records",
+            "records_complete"
+          ],
+          "scope": {
+            "policy_id": "$case.policy_id",
+            "insured_id": "$case.insured_id",
+            "snapshot_id": "$case.payment_history_snapshot_id",
+            "same_accident_required": false,
+            "scope_review": "本合同、同一被保险人的已付记录；不要仅按本次事故过滤。退款、冲销及同案重算需先核定。"
+          },
+          "select": {
+            "payment_status": [
+              "paid"
+            ],
+            "accounting_review_status": "confirmed",
+            "paid_before": "$case.settlement_snapshot_at",
+            "deduplicate_by": "payment_id",
+            "temporal_boundary_must_be_confirmed": true,
+            "exclude_new_payment_being_calculated": true
+          },
+          "aggregation": {
+            "operation": "sum",
+            "field": "amount",
+            "currency": "$case.currency"
+          },
+          "bindings": {
+            "prior_disability_paid": "aggregation.result"
+          },
+          "on_confirmed_empty": {
+            "status": "resolved",
+            "value": "0",
+            "requires": "records_complete=true且作用域、时间边界及冲销等事项已核实"
+          },
+          "on_missing": {
+            "status": "amount_pending",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "必需数据未知或未核实"
+          },
+          "on_conflict": {
+            "status": "manual_review",
+            "amount": null,
+            "liability_effect": "不因金额资料缺失直接否定责任",
+            "reason": "时间、记录范围或冲销口径存在争议"
+          },
+          "source": [
+            "2.1",
+            "2.3"
+          ],
+          "source_refs": [
+            "E_TOTAL",
+            "E_LIMIT"
+          ]
+        }
+      ],
+      "required_inputs": {
+        "applicable_aggregate_limit": {
+          "fact": "applicable_aggregate_limit"
+        },
+        "limit_basis_status": {
+          "fact": "limit_basis_status"
+        }
+      },
+      "formula": {
+        "op": "max",
+        "args": [
+          {
+            "literal": "0"
+          },
+          {
+            "op": "subtract",
+            "args": [
+              {
+                "op": "subtract",
+                "args": [
+                  {
+                    "fact": "applicable_aggregate_limit"
+                  },
+                  {
+                    "var": "prior_death_paid"
+                  }
+                ]
+              },
+              {
+                "var": "prior_disability_paid"
+              }
+            ]
+          }
+        ]
+      },
+      "outputs": {
+        "remaining_limit": "本次新增给付前的共享限额余额"
+      },
+      "on_missing": {
+        "status": "amount_pending",
+        "amount": null,
+        "liability_effect": "不因金额资料缺失直接否定责任",
+        "reason": "必需数据未知或未核实"
+      },
+      "on_conflict": {
+        "status": "manual_review",
+        "amount": null,
+        "liability_effect": "不因金额资料缺失直接否定责任",
+        "reason": "递减保额适用时点、多次事故或已付超限等口径待核定"
+      },
+      "preconditions": [
+        "所有依赖均resolved",
+        "limit_basis_status=confirmed",
+        "输入非负且币种一致",
+        "付款ID唯一且属于同一已核实快照",
+        "已付总额不大于核定上限；如已超出须人工核定，不用截零掩盖不一致"
+      ],
+      "no_double_deduction": "余额已减过历史付款。身故金本身的扣减与余额约束以min合并，不再从余额额外减同一笔伤残金。",
+      "interpretation_boundary": "固定保额且无特别约定时，可按已确认的保额作为累计上限。递减保额及多次事故的上限时点需要保单与人工审核口径，本文件不擅自选定。",
+      "source_refs": [
+        "E_TOTAL",
+        "E_LIMIT"
+      ],
+      "guard": {
+        "op": "all",
+        "args": [
+          {
+            "op": "eq",
+            "args": [
+              {
+                "fact": "limit_basis_status"
+              },
+              {
+                "literal": "confirmed"
+              }
+            ]
+          },
+          {
+            "op": "lte",
+            "args": [
+              {
+                "op": "add",
+                "args": [
+                  {
+                    "var": "prior_death_paid"
+                  },
+                  {
+                    "var": "prior_disability_paid"
+                  }
+                ]
+              },
+              {
+                "fact": "applicable_aggregate_limit"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "amount_rules": [
+    {
+      "source": [
+        "2.3",
+        "2.4"
+      ],
+      "method": "先读取保险单所载基本保险金额及保险金额确定方式。期内不变时按基本保险金额；期内递减时，事故/身故/宣告死亡相关日按保单约定读取仍未偿还的贷款本金余额或本息余额。以保单特别约定为准。",
+      "missing_data_result": "金额待核定，不以初始贷款金额代替相关日保额。",
+      "id": "AMOUNT01",
+      "outputs": {
+        "sum_insured_at_date": "按请求的责任项、保单、被保险人及日期核实的本项保险金额"
+      },
+      "required_inputs": [
+        "policy_id",
+        "insured_id",
+        "responsibility_id",
+        "valuation_date",
+        "policy_and_endorsements"
+      ],
+      "on_missing": {
+        "status": "amount_pending",
+        "amount": null,
+        "liability_effect": "不因金额资料缺失直接否定责任",
+        "reason": "必需数据未知或未核实"
+      },
+      "source_refs": [
+        "E_AMOUNT",
+        "E_LIMIT"
+      ],
+      "binding": "external_assessment"
+    }
+  ],
+  "data_sources": {
+    "payment_history": {
+      "description": "同一保单、被保险人在同一快照下的完整历史给付记录。",
+      "required_metadata": [
+        "policy_id",
+        "insured_id",
+        "snapshot_id",
+        "as_of",
+        "records_complete",
+        "currency"
+      ],
+      "record_fields": {
+        "payment_id": "唯一付款标识；每笔付款计入每个汇总一次",
+        "policy_id": "保单标识",
+        "insured_id": "被保险人标识",
+        "responsibility_id": "RESP_DEATH或RESP_DISABILITY",
+        "claim_id": "案件标识",
+        "accident_id": "事故标识；仅作关联，不擅自限定扣减为同一次事故",
+        "paid_at": "实际付款时间；只有日期且不能判定先后时转人工核定",
+        "amount": "实际支付金额，非负十进制字符串",
+        "currency": "币种",
+        "payment_status": "paid / pending / cancelled / reversed / partially_refunded",
+        "accounting_review_status": "confirmed / unresolved；退回、冲销、重复及同日顺序不明须先核定"
+      },
+      "unknown_policy": "账本不完整、币种不同、日期顺序或退款冲销口径未核实：金额待核定；不得自行抵消返还款或把缺失当零。",
+      "snapshot_policy": "本次增量给付尚未写入历史快照，计算完成后才登记。重试不得重复登记；已有部分给付的同案重算需专门审核，不按全新给付重复计算。"
+    }
+  },
+  "sources": [
+    {
+      "id": "S_CONTRACT",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "1.1",
+      "heading_path": [
+        "1.1"
+      ],
+      "locator": {
+        "line_start": 7,
+        "line_end": 7,
+        "quote": "本保险合同由保险条款、投保单、保险单以及经投保人与保险人认可的、与保险合同有关的其它书面协议（包括但不限于健康问卷、声明、批单）组成。凡涉及本保险合同的约定，均应采用书面形式。"
+      }
+    },
+    {
+      "id": "S_ELIGIBILITY",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "1.3",
+      "heading_path": [
+        "1.3"
+      ],
+      "locator": {
+        "line_start": 15,
+        "line_end": 17,
+        "quote": "除另有约定外，年龄在 16 周岁（见释义）至 65 周岁、身体健康、能正常工作或正常生活，向贷款机构申请贷款并签订借款合同的自然人可作为被保险人。经投保人申请、保险人同意，借款人的配偶也可作为本保险合同的被保险人。\n\n企业或其他社会团体向贷款机构借款的，对该企业或社会团体拥有经营决策权或直接控制权且年龄在18周岁至65周岁的自然人，可作为本保险合同的被保险人。"
+      }
+    },
+    {
+      "id": "S_START",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "1.3.1",
+      "heading_path": [
+        "1.3.1"
+      ],
+      "locator": {
+        "line_start": 21,
+        "line_end": 21,
+        "quote": "无论本保险合同为首次投保、续保投保还是非续保投保的，被保险人获得被保资格的日期为本保险合同的保险期间起始日。"
+      }
+    },
+    {
+      "id": "S_END",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "1.3.2",
+      "heading_path": [
+        "1.3.2"
+      ],
+      "locator": {
+        "line_start": 25,
+        "line_end": 29,
+        "quote": "被保险人因非保险事故身故的，则自其身故之日起该被保险人的被保资格丧失，保险人对该被保险人所承担的保险责任随即终止。\n\n本保险合同保险期间终止，则被保险人的被保资格终止，保险人对被保险人所承担的保险责任随即终止。\n\n本保险合同解除，则自解除之日起被保险人的被保资格终止，保险人对被保险人所承担的保险责任随即终止。"
+      }
+    },
+    {
+      "id": "S_BENEFICIARY",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "1.4",
+      "heading_path": [
+        "1.4"
+      ],
+      "locator": {
+        "line_start": 33,
+        "line_end": 41,
+        "quote": "订立本保险合同时，被保险人或投保人可指定一人或数人为本保险合同的身故保险金受益人。身故保险金受益人为数人时，应确定其受益顺序和受益份额；未确定受益份额的，各身故保险金受益人按照相等份额享有受益权。\n\n除另有约定外，本保险合同的伤残保险金受益人为被保险人本人。\n\n被保险人或投保人可以变更保险金受益人，但需书面通知保险人，由保险人在本保险合同上批注。\n\n投保人指定或变更保险金受益人的，应经被保险人同意。被保险人不具有完全民事行为能力的，应由其监护人指定或变更保险金受益人。\n\n受益人故意造成被保险人死亡、伤残、疾病的，或者故意杀害被保险人未遂的，该受益人丧失受益权。"
+      }
+    },
+    {
+      "id": "E_TOTAL",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.1",
+      "heading_path": [
+        "2.1"
+      ],
+      "locator": {
+        "line_start": 47,
+        "line_end": 47,
+        "quote": "在保险期间内，被保险人自获得被保资格之日起遭受意外伤害（见释义），并因该意外伤害导致其身故、伤残的，保险人依照下列约定给付保险金，且给付各项保险金之和不超过保险金额。"
+      }
+    },
+    {
+      "id": "E_DEATH",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.1.1",
+      "heading_path": [
+        "2.1.1"
+      ],
+      "locator": {
+        "line_start": 51,
+        "line_end": 51,
+        "quote": "被保险人自该意外伤害发生之日起 180日内因该意外伤害身故的，保险人按该被保险人身故时本项责任的保险金额给付意外身故保险金，对该被保险人的保险责任终止。"
+      }
+    },
+    {
+      "id": "E_DECLARED",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.1.1",
+      "heading_path": [
+        "2.1.1"
+      ],
+      "locator": {
+        "line_start": 53,
+        "line_end": 53,
+        "quote": "被保险人因遭受意外伤害且自该意外伤害发生日起下落不明，后经人民法院宣告死亡的，保险人按该被保险人宣告的死亡日期时本项责任的保险金额给付意外身故保险金。但若被保险人被宣告死亡后生还的，保险金受领人应于知道或应当知道被保险人生还后 30日内退还保险人给付的意外身故保险金。"
+      }
+    },
+    {
+      "id": "E_OFFSET",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.1.1",
+      "heading_path": [
+        "2.1.1"
+      ],
+      "locator": {
+        "line_start": 55,
+        "line_end": 55,
+        "quote": "被保险人身故前保险人已给付 2.1.2约定的意外伤残保险金的，意外身故保险金应扣除已给付的保险金。"
+      }
+    },
+    {
+      "id": "E_DISABILITY",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.1.2",
+      "heading_path": [
+        "2.1.2"
+      ],
+      "locator": {
+        "line_start": 59,
+        "line_end": 59,
+        "quote": "被保险人自该意外伤害发生之日起 180日内因该意外伤害造成《人身保险伤残评定标准及代码》（见释义）（简称《评定标准》）所列伤残程度之一的，保险人按《评定标准》所对应伤残等级的给付比例乘以该被保险人出险时本项责任的保险金额给付意外伤残保险金。如自意外伤害发生之日起180日内治疗仍未结束的，则按该意外伤害发生之日起第 180日的身体情况进行伤残评定，并据此给付意外伤残保险金。"
+      }
+    },
+    {
+      "id": "S_MULTI",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.1.2（1）",
+      "heading_path": [
+        "2.1.2（1）"
+      ],
+      "locator": {
+        "line_start": 61,
+        "line_end": 61,
+        "quote": "（1）被保险人因同一意外伤害造成两处或两处以上伤残时，保险人根据《评定标准》规定的多处伤残评定原则给付意外伤残保险金。"
+      }
+    },
+    {
+      "id": "S_PRIOR",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.1.2（2）",
+      "heading_path": [
+        "2.1.2（2）"
+      ],
+      "locator": {
+        "line_start": 63,
+        "line_end": 63,
+        "quote": "（2）被保险人如在本次意外伤害之前已有残疾，保险人按合并后的伤残程度在《评定标准》中所对应伤残等级的给付比例扣除原有伤残程度所对应伤残等级的给付比例，给付意外伤残保险金。"
+      }
+    },
+    {
+      "id": "S_EXCLUSION",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1",
+      "heading_path": [
+        "2.2.1"
+      ],
+      "locator": {
+        "line_start": 67,
+        "line_end": 67,
+        "quote": "2.2.1 因下列情形之一，导致被保险人身故、伤残的，保险人不承担给付保险金的责任："
+      }
+    },
+    {
+      "id": "E_AMOUNT",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.3",
+      "heading_path": [
+        "2.3"
+      ],
+      "locator": {
+        "line_start": 103,
+        "line_end": 109,
+        "quote": "投保人于投保时，需与保险人协商确定基本保险金额以及保险金额确定方式，并在保险单中载明。\n\n除另有约定外，基本保险金额是指借款合同约定的贷款本金总额或贷款本息总额。\n\n保险金额确定方式有以下两种：（1）期内不变，即保险金额等于基本保险金额；（2）期内递减，即保险金额随仍未偿还的贷款本金余额或贷款本息余额逐渐递减，保险期间开始之日的保险金额为基本保险金额，之后的保险金额为仍未偿\n\n还的贷款本金余额或贷款本息余额。"
+      }
+    },
+    {
+      "id": "E_LIMIT",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.3",
+      "heading_path": [
+        "2.3"
+      ],
+      "locator": {
+        "line_start": 111,
+        "line_end": 111,
+        "quote": "每一被保险人的保险金额是保险人承担给付该被保险人保险金责任的最高限额。"
+      }
+    },
+    {
+      "id": "S_PERIOD",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.4",
+      "heading_path": [
+        "2.4"
+      ],
+      "locator": {
+        "line_start": 115,
+        "line_end": 115,
+        "quote": "除另有约定外，保险期间为借款合同约定的贷款期限，但最长不得超过 1 年。具体以保险单载明的起讫时间为准。"
+      }
+    },
+    {
+      "id": "S_PREMIUM",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "3.1",
+      "heading_path": [
+        "3.1"
+      ],
+      "locator": {
+        "line_start": 121,
+        "line_end": 129,
+        "quote": "本合同保险费交付方式由投保人和保险人在投保时约定，并在保险单上载明。\n\n若投保人选择一次性交纳保险费，投保人应当在本合同成立时一次性交清保险费。保险费交清前，本保险合同不生效，对保险费交清前发生的保险事故，保险人不承担保险责任。\n\n若投保人选择分期交纳保险费，需经投保人申请并经保险人同意，并在保险单中载明保险费分期交付的周期。在交纳首月保险费后，投保人应当在每个保险费约定支付日交纳其余各月对应期次的保险费。若投保人未按照保险合同约定的付款时间足额交付当期保险费，保险人允许投保人在合同约定的交费延长期内补交对应期次的保险费。除保险合同另有约定外，如被保险人在正常交费对应的保险期间内或交费延长期内发生保险事故，保险人依照合同约定赔偿保险金，但须投保人先行补交剩余全年保险费，补交金额为保险合同约定的全年保险费总额扣减投保人已交纳的保险费。\n\n若投保人未按照保险合同约定的付款时间足额交付当期保险费，且在保险合同约定的交费延长期内仍未足额补交当期保险费，保险期间在上一交费周期结束之日起终止，对于保险期间终止后发生的保险事故，保险人不承担保险责任。\n\n## 除另有约定外,交费延长期为 30 天。"
+      }
+    },
+    {
+      "id": "S_DISCLOSURE",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "3.2",
+      "heading_path": [
+        "3.2"
+      ],
+      "locator": {
+        "line_start": 133,
+        "line_end": 141,
+        "quote": "投保人应如实填写投保单并回答保险人提出的询问，履行如实告知义务。\n\n投保人故意或者因重大过失未履行前款规定的如实告知义务，足以影响保险人决定是否同意承保或者提高保险费率的，保险人有权解除合同。\n\n投保人故意不履行如实告知义务的，保险人对于合同解除前发生的保险事故，不承担赔偿或者给付保险金的责任，并不退还保险费。\n\n投保人因重大过失未履行如实告知义务，对保险事故的发生有严重影响的，保险人对于合同解除前发生的保险事故，不承担赔偿或者给付保险金的责任，但应当退还保险费。\n\n保险人在合同订立时已经知道投保人未如实告知的情况的，保险人不得解除合同；发生保险事故的，保险人应当承担赔偿或者给付保险金的责任。"
+      }
+    },
+    {
+      "id": "S_CHANGE",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "3.4",
+      "heading_path": [
+        "3.4"
+      ],
+      "locator": {
+        "line_start": 149,
+        "line_end": 149,
+        "quote": "在保险期间内，投保人需变更合同其他内容的，应以书面形式向保险人提出申请。保险人同意后出具批单，并在本保险合同中批注。若被保险人已身故，则保险人不接受本保险合同中有关该被保险人的任何内容的变更申请。"
+      }
+    },
+    {
+      "id": "S_NOTICE",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "3.5",
+      "heading_path": [
+        "3.5"
+      ],
+      "locator": {
+        "line_start": 153,
+        "line_end": 153,
+        "quote": "发生保险责任范围内的事故后，投保人、被保险人或受益人应及时通知保险人，并书面说明事故发生的原因、经过和损失情况。"
+      }
+    },
+    {
+      "id": "S_APPLICATION",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "保险金申请",
+      "heading_path": [
+        "保险金申请"
+      ],
+      "locator": {
+        "line_start": 169,
+        "line_end": 169,
+        "quote": "保险金申请人（见释义）向保险人申请给付保险金时，应填写保险金给付申请书，并提交以下材料。保险金申请人因特殊原因不能提供以下材料的，应提供其它合法有效的材料。若保险金申请人委托他人申请的，还应提供授权委托书原件、委托人和受托人的身份证明等相关证明文件。保险人按照本保险合同的约定，认为有关的证明和资料不完整的，应当及时一次性通知保险金申请人补充提供。保险金申请人未能提供有关材料，导致保险人无法核实该申请的真实性的，保险人对无法核实部分不承担给付保险金的责任。"
+      }
+    },
+    {
+      "id": "S_DEATH_DOCS",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "5.1",
+      "heading_path": [
+        "5.1"
+      ],
+      "locator": {
+        "line_start": 173,
+        "line_end": 183,
+        "quote": "（1） 保险金给付申请书；\n\n（2） 保险单；\n\n（3） 借款合同、被保险人的还款记录或证明；\n\n（4） 保险金申请人的身份证明；\n\n（5） 公安机关或司法部门、二级及二级以上医院或保险人认可的医疗机构出具的被保险人死亡证明或验尸报告。若被保险人为宣告死亡，保险金申请人应提供法院出具的宣告死亡证明文件；\n\n（6） 保险金申请人所能提供的与确认保险事故的性质、原因、损失程度等有关的其他证明和资料。"
+      }
+    },
+    {
+      "id": "S_DISABILITY_DOCS",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "5.2",
+      "heading_path": [
+        "5.2"
+      ],
+      "locator": {
+        "line_start": 187,
+        "line_end": 197,
+        "quote": "（1） 保险金给付申请书；\n\n（2） 保险单；\n\n（3） 借款合同、被保险人的还款记录或证明；\n\n（4） 保险金申请人、被保险人身份证明；\n\n（5） 司法部门或保险人认可的鉴定机构出具的伤残等级鉴定书；\n\n（6） 保险金申请人所能提供的与确认保险事故的性质、原因、损失程度等有关的其他证明和资料。"
+      }
+    },
+    {
+      "id": "S_CANCEL",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "保险合同解除",
+      "heading_path": [
+        "保险合同解除"
+      ],
+      "locator": {
+        "line_start": 201,
+        "line_end": 205,
+        "quote": "在保险期间内，若被保险人提前还清贷款，投保人可以要求解除本保险合同。但已发生任何保险金给付或已发生本保险合同约定的保险事故但尚未给付保险金的，投保人不得要求解除本保险合同。\n\n投保人要求解除本保险合同时，应填写保险合同解除申请书，并提交保险单原件、保险费交付凭证、投保人身份证明和贷款机构出具的借款人借款还清证明。\n\n本保险合同自本保险人接到保险合同解除申请书时终止。保险人于接到保险合同解除申请书之日起三十日内向投保人退本保险合同的现金价值（见释义）。"
+      }
+    },
+    {
+      "id": "S_LAW",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "8",
+      "heading_path": [
+        "8"
+      ],
+      "locator": {
+        "line_start": 223,
+        "line_end": 223,
+        "quote": "本保险合同约定与《中华人民共和国保险法》等法律规定相悖之处，以法律规定为准。本保险合同未尽事宜，以法律规定为准。"
+      }
+    },
+    {
+      "id": "S_AGE",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "9.1",
+      "heading_path": [
+        "9.1"
+      ],
+      "locator": {
+        "line_start": 229,
+        "line_end": 229,
+        "quote": "以法定身份证明文件中记载的出生日期为基础计算的实足年龄。"
+      }
+    },
+    {
+      "id": "S_ACCIDENT",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "9.2",
+      "heading_path": [
+        "9.2"
+      ],
+      "locator": {
+        "line_start": 233,
+        "line_end": 243,
+        "quote": "指遭受外来的、突发的、非本意的、非疾病的使身体受到伤害的客观事件。以下情形属于疾病范畴，非本条款所指意外伤害：\n\n（1） 猝死：指由潜在疾病、身体机能障碍或其他非外来性原因所导致的、在出现急性症状后发生的突然死亡，以医院的诊断或公安、司法机关的鉴定为准；\n\n（2） 过敏及由过敏引发的变态反应性疾病；\n\n（3） 高原反应；\n\n（4） 中暑；\n\n（5） 细菌、病毒或其他病原体导致的感染性疾病。"
+      }
+    },
+    {
+      "id": "S_STANDARD",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "9.3",
+      "heading_path": [
+        "9.3"
+      ],
+      "locator": {
+        "line_start": 247,
+        "line_end": 247,
+        "quote": "指由中国保险监督管理委员会发布的《人身保险伤残评定标准及代码》（保监发﹝2014﹞6 号、标准编号 JR/T0083-2013）。如该标准重新修订，则以最新修订的文件版本为准。"
+      }
+    },
+    {
+      "id": "S_SUDDEN",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "9.4",
+      "heading_path": [
+        "9.4"
+      ],
+      "locator": {
+        "line_start": 251,
+        "line_end": 251,
+        "quote": "指由潜在疾病、身体机能障碍或其他非外来性原因所导致的、在出现急性症状后发生的突然死亡，以医院的诊断或公安、司法机关的鉴定为准。"
+      }
+    },
+    {
+      "id": "S_ICD",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "9.5",
+      "heading_path": [
+        "9.5"
+      ],
+      "locator": {
+        "line_start": 255,
+        "line_end": 255,
+        "quote": "指世界卫生组织（WHO）制定的国际统一的疾病分类方法，它根据疾病的病因、病理、临床表现和解剖位置等特性，用一种系统有序的组合编码的方法对疾病进行分类。目前世界通用的是第 10次修订本《疾病和有关健康问题的国际统计分类》，（ICD-10）是该分类第 10 次修订本的简称。"
+      }
+    },
+    {
+      "id": "S_DRUNK",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "9.6",
+      "heading_path": [
+        "9.6"
+      ],
+      "locator": {
+        "line_start": 259,
+        "line_end": 259,
+        "quote": "指经检测或者鉴定，发生事故时车辆驾驶人员每百毫升血液中的酒精含量达到或者超过一定的标准，公安机关交通管理部门依据《道路交通安全法》的规定认定为饮酒后驾驶或者醉酒后驾驶。"
+      }
+    },
+    {
+      "id": "S_LICENSE",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "9.7",
+      "heading_path": [
+        "9.7"
+      ],
+      "locator": {
+        "line_start": 263,
+        "line_end": 275,
+        "quote": "被保险人存在下列情形之一：\n\n（1） 无驾驶证或驾驶证有效期已届满；\n\n（2） 驾驶的机动车与驾驶证载明的准驾车型不符；\n\n（3） 实习期内驾驶公共汽车、营运客车或者载有爆炸物品、易燃易爆化学物品、剧毒或者放射性等危险物品的机动车，实习期内驾驶的机动车牵引挂车；\n\n（4） 持未按规定审验的驾驶证，以及在暂扣、扣留、吊销、注销驾驶证期间驾驶机动车；\n\n（5） 使用各种专用机械车、特种车的人员无国家有关部门核发的有效操作证，驾驶营业性客车的驾驶人无国家有关部门核发的有效资格证书；\n\n（6） 依照法律法规或公安机关交通管理部门有关规定不允许驾驶机动车的其他情况下驾车。"
+      }
+    },
+    {
+      "id": "S_VEHICLE",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "9.8",
+      "heading_path": [
+        "9.8"
+      ],
+      "locator": {
+        "line_start": 279,
+        "line_end": 279,
+        "quote": "发生保险事故时被保险人驾驶的机动车无公安机关交通管理部门、农机部门等政府管理部门核发的行驶证或号牌，或行驶证不在有效期内，或该机动车未按规定检验或检验不合格。"
+      }
+    },
+    {
+      "id": "S_RISK",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "9.9",
+      "heading_path": [
+        "9.9"
+      ],
+      "locator": {
+        "line_start": 283,
+        "line_end": 295,
+        "quote": "指运动风险等级高、极易发生人身伤害的运动，包括潜水、滑水、滑雪、滑冰、跳伞、热气球运动、滑翔机、滑翔翼、滑翔伞、动力伞、攀岩运动、探险活动、武术比赛、摔跤比赛、特技表演、赛马、赛车、驾驶卡丁车、蹦极及保险单载明的其他运动。其中：\n\n（1）潜水： 指以辅助呼吸器材在江、河、湖、海、水库、运河等水域进行的水下运动，但穿着救生衣在水面进行的浮潜活动除外。\n\n（2）热气球运动： 指乘坐热气球升空飞行的体育活动。\n\n（3）攀岩运动： 指以攀登悬崖、楼宇外墙、人造悬崖、冰崖、冰山等运动。\n\n（4）探险活动： 指明知在某种特定的自然条件下有失去生命或使身体受到伤害的危险，而故意使自己置身其中的行为。如江河漂流、非固定路线徒步、徒步穿越沙漠或人迹罕至的原始森林等活动。\n\n（5）武术比赛： 指两人或两人以上对抗性柔道、空手道、跆拳道、散打、拳击等各种拳术及各种使用器械的对抗性比赛。\n\n（6）特技： 指从事马术、杂技、驯兽等特殊技能。"
+      }
+    },
+    {
+      "id": "S_APPLICANT",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "9.10",
+      "heading_path": [
+        "9.10"
+      ],
+      "locator": {
+        "line_start": 299,
+        "line_end": 299,
+        "quote": "除另有约定外，身故保险金申请人是指受益人或被保险人的继承人或依法享有保险金请求权的其他自然人；其他保险金申请人是指被保险人本人。"
+      }
+    },
+    {
+      "id": "S_EX01",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（1）",
+      "heading_path": [
+        "2.2.1（1）"
+      ],
+      "locator": {
+        "line_start": 69,
+        "line_end": 69,
+        "quote": "（1） 投保人对被保险人的故意杀害、故意伤害；"
+      }
+    },
+    {
+      "id": "S_EX02",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（2）",
+      "heading_path": [
+        "2.2.1（2）"
+      ],
+      "locator": {
+        "line_start": 71,
+        "line_end": 71,
+        "quote": "（2） 被保险人故意犯罪或抗拒依法采取的刑事强制措施；"
+      }
+    },
+    {
+      "id": "S_EX03",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（3）",
+      "heading_path": [
+        "2.2.1（3）"
+      ],
+      "locator": {
+        "line_start": 73,
+        "line_end": 73,
+        "quote": "（3） 被保险人故意自伤或自杀，但被保险人自杀时为无民事行为能力人的除外；"
+      }
+    },
+    {
+      "id": "S_EX04",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（4）",
+      "heading_path": [
+        "2.2.1（4）"
+      ],
+      "locator": {
+        "line_start": 75,
+        "line_end": 75,
+        "quote": "（4） 被保险人因挑衅或故意行为而导致的打斗、被袭击或被谋杀；"
+      }
+    },
+    {
+      "id": "S_EX05",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（5）",
+      "heading_path": [
+        "2.2.1（5）"
+      ],
+      "locator": {
+        "line_start": 77,
+        "line_end": 77,
+        "quote": "（5） 被保险人妊娠、流产、分娩；"
+      }
+    },
+    {
+      "id": "S_EX06",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（6）",
+      "heading_path": [
+        "2.2.1（6）"
+      ],
+      "locator": {
+        "line_start": 79,
+        "line_end": 79,
+        "quote": "（6） 被保险人接受包括美容、整容、整形手术在内的任何医疗行为而造成的意外；"
+      }
+    },
+    {
+      "id": "S_EX07",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（7）",
+      "heading_path": [
+        "2.2.1（7）"
+      ],
+      "locator": {
+        "line_start": 81,
+        "line_end": 81,
+        "quote": "（7） 被保险人未遵医嘱服用、涂用、注射药物，但按使用说明的规定使用非处方药不在此限；"
+      }
+    },
+    {
+      "id": "S_EX08",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（8）",
+      "heading_path": [
+        "2.2.1（8）"
+      ],
+      "locator": {
+        "line_start": 83,
+        "line_end": 83,
+        "quote": "（8） 被保险人受酒精、毒品、管制药物的影响，但遵医嘱使用药物的情形不在此限；"
+      }
+    },
+    {
+      "id": "S_EX09",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（9）",
+      "heading_path": [
+        "2.2.1（9）"
+      ],
+      "locator": {
+        "line_start": 85,
+        "line_end": 85,
+        "quote": "（9） 疾病，包括但不限于高原反应、中暑、猝死（见释义）；"
+      }
+    },
+    {
+      "id": "S_EX10",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（10）",
+      "heading_path": [
+        "2.2.1（10）"
+      ],
+      "locator": {
+        "line_start": 87,
+        "line_end": 87,
+        "quote": "（10）非因意外伤害导致的细菌、病毒或其他病原体导致的感染；"
+      }
+    },
+    {
+      "id": "S_EX11",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（11）",
+      "heading_path": [
+        "2.2.1（11）"
+      ],
+      "locator": {
+        "line_start": 89,
+        "line_end": 89,
+        "quote": "（11）过敏及由过敏引发的变态反应性疾病；"
+      }
+    },
+    {
+      "id": "S_EX12",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（12）",
+      "heading_path": [
+        "2.2.1（12）"
+      ],
+      "locator": {
+        "line_start": 91,
+        "line_end": 91,
+        "quote": "（12）任何生物、化学、原子能武器，原子能或核能装置所造成的爆炸、灼伤、污染或辐射；"
+      }
+    },
+    {
+      "id": "S_EX13",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（13）",
+      "heading_path": [
+        "2.2.1（13）"
+      ],
+      "locator": {
+        "line_start": 93,
+        "line_end": 93,
+        "quote": "（13）战争、军事冲突、暴乱或武装叛乱、恐怖袭击；"
+      }
+    },
+    {
+      "id": "S_EX14",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（14）",
+      "heading_path": [
+        "2.2.1（14）"
+      ],
+      "locator": {
+        "line_start": 95,
+        "line_end": 95,
+        "quote": "（14）被保险人存在精神和行为障碍（以世界卫生组织颁布的《疾病和有关健康问题的国际统计分类（ICD-10）》（见释义）第十次修订版确定为准）；"
+      }
+    },
+    {
+      "id": "S_EX15",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（15）",
+      "heading_path": [
+        "2.2.1（15）"
+      ],
+      "locator": {
+        "line_start": 97,
+        "line_end": 97,
+        "quote": "（15）被保险人酒后驾驶（见释义）、无合法有效驾驶证（见释义）驾驶或驾驶无合法有效行驶证（见释义）的机动交通工具；"
+      }
+    },
+    {
+      "id": "S_EX16",
+      "file": "中国人民财产保险股份有限公司借款人意外伤害保险条款.md",
+      "article": "2.2.1（16）",
+      "heading_path": [
+        "2.2.1（16）"
+      ],
+      "locator": {
+        "line_start": 99,
+        "line_end": 99,
+        "quote": "（16）被保险人从事高风险运动（见释义）。"
+      }
+    }
+  ],
+  "unresolved": [
+    {
+      "id": "U_CONTRACT",
+      "issue": "保单、特别约定、如实告知解除效力未实现完整状态机",
+      "affected_nodes": [
+        "TERMS_REVIEW",
+        "C01"
+      ],
+      "resolution": "提供已审核的合同状态及适用约定；争议进入复核",
+      "source_refs": [
+        "S_CONTRACT",
+        "S_DISCLOSURE",
+        "S_LAW"
+      ]
+    },
+    {
+      "id": "U_DATES",
+      "issue": "起算日、同日先后与法院宣告死亡日期需核实",
+      "affected_nodes": [
+        "D02",
+        "D04",
+        "D07",
+        "D06"
+      ],
+      "resolution": "保留日期事实与审核结果，不把缺失当超期",
+      "source_refs": [
+        "E_DEATH",
+        "E_DECLARED",
+        "E_OFFSET"
+      ]
+    },
+    {
+      "id": "U_STANDARD",
+      "issue": "伤残标准正文及鉴定未提供",
+      "affected_nodes": [
+        "A05",
+        "A_MULTI_REVIEW",
+        "A07",
+        "A08"
+      ],
+      "resolution": "经适用标准核实鉴定；比例缺失挂起金额",
+      "source_refs": [
+        "S_STANDARD",
+        "S_MULTI",
+        "S_PRIOR"
+      ]
+    },
+    {
+      "id": "U_LIMIT",
+      "issue": "递减保额、多次事故的累计上限适用时点需要核定",
+      "affected_nodes": [
+        "D04",
+        "D07",
+        "A09"
+      ],
+      "resolution": "limit_basis_status需confirmed；历史记录必须完整",
+      "source_refs": [
+        "E_AMOUNT",
+        "E_TOTAL",
+        "E_LIMIT"
+      ]
+    },
+    {
+      "id": "U_DEFINITION",
+      "issue": "非本意定义与自杀例外、疾病感染定义与免责措辞可能需交叉解释",
+      "affected_nodes": [
+        "DEFINITION_REVIEW",
+        "C02",
+        "X01"
+      ],
+      "resolution": "未解决的适用冲突转复核；自杀例外只排除该项免责，不自动构成保险责任",
+      "source_refs": [
+        "S_ACCIDENT",
+        "S_EX03",
+        "S_EX10"
+      ]
+    },
+    {
+      "id": "U_RECIPIENT",
+      "issue": "受益人失权不等于保险责任消失；替代受领人与份额需确认",
+      "affected_nodes": [
+        "BENEFICIARY",
+        "RECIPIENT"
+      ],
+      "resolution": "保留局部责任与金额，仅暂停收款人核定",
+      "source_refs": [
+        "S_BENEFICIARY",
+        "S_APPLICANT"
+      ]
+    },
+    {
+      "id": "U_SETTLEMENT",
+      "issue": "实际给付还涉及补交保费、材料真实性和已付部分款项等核查",
+      "affected_nodes": [
+        "PREMIUM_SETTLEMENT"
+      ],
+      "resolution": "本图结果为局部核对，未发出任何支付指令",
+      "source_refs": [
+        "S_PREMIUM",
+        "S_APPLICATION"
+      ]
+    },
+    {
+      "id": "U_LEDGER",
+      "issue": "并发案件共同占用限额时需要账本锁定或预约机制；本图仅只读核算",
+      "affected_nodes": [
+        "D04",
+        "D07",
+        "A09"
+      ],
+      "resolution": "正式给付系统核对快照版本并原子登记，避免多个案件同时使用同一余额；本版未实现支付持久化",
+      "source_refs": [
+        "E_TOTAL",
+        "E_LIMIT"
+      ]
+    }
+  ],
+  "migration": {
+    "original_unchanged": true,
+    "node_mapping": {
+      "D01": [
+        "D01"
+      ],
+      "A01": [
+        "A01"
+      ],
+      "C01": [
+        "C01"
+      ],
+      "C02": [
+        "C02"
+      ],
+      "C03": [
+        "C03"
+      ],
+      "X01": [
+        "X01"
+      ],
+      "B01": [
+        "B01"
+      ],
+      "D02": [
+        "D02"
+      ],
+      "D03": [
+        "D03"
+      ],
+      "D04": [
+        "D04"
+      ],
+      "D05": [
+        "D05"
+      ],
+      "D06": [
+        "D06"
+      ],
+      "D07": [
+        "D07"
+      ],
+      "A02": [
+        "A02"
+      ],
+      "A04": [
+        "A04"
+      ],
+      "A05": [
+        "A05"
+      ],
+      "A06": [
+        "A06"
+      ],
+      "A07": [
+        "A07"
+      ],
+      "A08": [
+        "A08"
+      ],
+      "A09": [
+        "A09"
+      ],
+      "EX01": [
+        "EX01"
+      ],
+      "EX02": [
+        "EX02"
+      ],
+      "EX03": [
+        "EX03"
+      ],
+      "EX04": [
+        "EX04"
+      ],
+      "EX05": [
+        "EX05"
+      ],
+      "EX06": [
+        "EX06"
+      ],
+      "EX07": [
+        "EX07"
+      ],
+      "EX08": [
+        "EX08"
+      ],
+      "EX09": [
+        "EX09"
+      ],
+      "EX10": [
+        "EX10"
+      ],
+      "EX11": [
+        "EX11"
+      ],
+      "EX12": [
+        "EX12"
+      ],
+      "EX13": [
+        "EX13"
+      ],
+      "EX14": [
+        "EX14"
+      ],
+      "EX15": [
+        "EX15"
+      ],
+      "EX16": [
+        "EX16"
+      ],
+      "A03": [
+        "A01"
+      ],
+      "R04": [
+        "OUT_CAUSATION_FAIL",
+        "OUT_NEEDS_INPUT"
+      ],
+      "R07": [
+        "OUT_DISABILITY_FAIL",
+        "OUT_NEEDS_INPUT"
+      ]
+    },
+    "changes": [
+      "保留核心ID与跨责任依赖，统一为facts/rules/nodes/sources结构。",
+      "宣告死亡按death_mode独立分流，不先要求普通身故180日事实。",
+      "多处伤残评定为所有适用伤残路径共同步骤；既有残疾状态与比例值分开。",
+      "免责例外使用结构化括号；缺失状态独立处理。",
+      "金额已核算仍可能待受益人或补交保费，不强行归为最终赔付。"
+    ]
+  }
+}
