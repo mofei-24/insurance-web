@@ -113,6 +113,8 @@ export interface Graph {
     id: string;
     name?: string;
     label?: string;
+    binding?: string;
+    outputs?: Record<string, string>;
     source_refs: string[];
   }[];
   responsibility_relations: {

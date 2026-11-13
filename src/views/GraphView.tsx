@@ -51,6 +51,7 @@ type CardData = {
   muted?: boolean;
   step?: number;
   output?: string;
+  ratioOutput?: boolean;
   pending?: boolean;
   sourceText?: string;
   minHeight?: number;
@@ -136,7 +137,7 @@ function CardSurface({
         {data.kind === "calculation" && (
           <span className="calculation-tag">
             <Icon name="calculator" size={14} />
-            金额计算
+            {data.ratioOutput ? "比例计算" : "金额计算"}
           </span>
         )}
         <strong>{data.title}</strong>
@@ -151,9 +152,13 @@ function CardSurface({
             className={`node-amount${data.output === undefined ? " pending" : ""}`}
           >
             {data.output !== undefined
-              ? `¥ ${Number(data.output).toLocaleString("zh-CN", { maximumFractionDigits: 12 })}`
+              ? data.ratioOutput
+                ? data.output
+                : `¥ ${Number(data.output).toLocaleString("zh-CN", { maximumFractionDigits: 12 })}`
               : data.pending
-                ? "金额待核定"
+                ? data.ratioOutput
+                  ? "比例待核定"
+                  : "金额待核定"
                 : "待案例计算"}
           </span>
         )}
@@ -403,6 +408,7 @@ export function GraphView({
             ? { title: phase.title, open: () => go(phase.id) }
             : undefined,
           output: visited.get(id)?.output,
+          ratioOutput: n.output_key?.endsWith("_ratio"),
           pending: !!visited.get(id),
           stops: exits(n)
             .filter((e) => isFoldedOutcome(nodeIndex.get(e.target)))

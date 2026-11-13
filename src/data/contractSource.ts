@@ -1,6 +1,7 @@
 import type { Dataset } from "./graph";
 import type { Graph } from "./types";
 import { validateGraph } from "./validate";
+import { axaExamplesForGraph } from "../cases/axaExamples";
 
 export interface ContractFile {
   filename: string;
@@ -67,6 +68,9 @@ export function attachContract(
   }
   return {
     ...dataset,
+    examples: dataset.examples.length
+      ? dataset.examples
+      : axaExamplesForGraph(graphHash),
     contract,
     contractSource: {
       filename: original.filename,

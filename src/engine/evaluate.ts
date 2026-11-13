@@ -277,19 +277,43 @@ export function evaluate(g: Graph, input: CaseInput): Evaluation {
       source_refs: d.source_refs,
     };
     let r: Result;
+    const resolvedValues = new Map<string, Value>();
+    const amountRule =
+      d.target_type === "amount_rule"
+        ? g.amount_rules.find((item) => item.id === d.target_id)
+        : undefined;
     if (d.read_mode === "historical_snapshot") r = history(d);
-    else if (d.target_type === "amount_rule") {
+    else if (
+      amountRule?.binding === "external_assessment" &&
+      !d.parameters?.valuation_date
+    ) {
+      // Each external output is a separate confirmed fact.
+      const results = Object.entries(d.bindings).map(([key, output]) => {
+        const result = Object.hasOwn(amountRule.outputs ?? {}, output)
+          ? readFact(output)
+          : bad("review", `核定规则 ${amountRule.id} 未声明输出 ${output}`);
+        if (result.status !== "resolved") return result;
+        if (!(result.value instanceof Decimal))
+          return bad("review", `核定输出 ${output} 必须是十进制数值`);
+        resolvedValues.set(key, result.value);
+        return result;
+      });
+      r =
+        results.find((item) => item.status === "review") ??
+        results.find((item) => item.status === "unknown") ??
+        ok(true);
+    } else if (d.target_type === "amount_rule") {
       const c = input.context,
-        p = d.parameters!;
-      const date = p.valuation_date?.startsWith("$case.")
+        p = d.parameters;
+      const date = p?.valuation_date?.startsWith("$case.")
         ? c[p.valuation_date.slice(6)]
-        : p.valuation_date;
+        : p?.valuation_date;
       const matches = input.amount_assessments.filter(
         (a) =>
           a.policy_id === c.policy_id &&
           a.insured_id === c.insured_id &&
           a.currency === c.currency &&
-          a.responsibility_id === p.responsibility_id &&
+          a.responsibility_id === p?.responsibility_id &&
           a.valuation_date === date,
       );
       if (!date) r = bad("unknown", "缺少保额适用日期");
@@ -323,7 +347,10 @@ export function evaluate(g: Graph, input: CaseInput): Evaluation {
             guard.status !== "resolved"
               ? guard
               : guard.value !== true
-                ? bad("review", "共享上限口径未确认或历史付款已超限")
+                ? bad(
+                    "review",
+                    `共享规则前置条件未满足：${shared.name ?? shared.id}`,
+                  )
                 : expr(shared.formula);
         }
       }
@@ -331,8 +358,9 @@ export function evaluate(g: Graph, input: CaseInput): Evaluation {
     binding.status = r.status;
     if (r.status === "resolved")
       for (const key of Object.keys(d.bindings)) {
-        variables[key] = r.value;
-        binding.values[key] = String(display(r.value));
+        const value = resolvedValues.get(key) ?? r.value;
+        variables[key] = value;
+        binding.values[key] = String(display(value));
       }
     else {
       binding.reason = r.reason;

@@ -32,6 +32,8 @@ const resultAmountText = (r: Evaluation) =>
   r.amount === null && r.code === "LOCAL_FAIL"
     ? "未进入金额核算"
     : fmt(r.amount);
+const calculationValue = (value: string | undefined, key?: string) =>
+  value !== undefined && key?.endsWith("_ratio") ? value : fmt(value);
 const valueText = (v: unknown) =>
   v === true ? "是" : v === false ? "否" : v == null ? "未知" : String(v);
 function download(name: string, data: unknown) {
@@ -858,7 +860,14 @@ function Workbench({
                   >
                     <span>{String(i + 1).padStart(2, "0")}</span>
                     <b>{t.label}</b>
-                    {t.output !== undefined && <em>{fmt(t.output)}</em>}
+                    {t.output !== undefined && (
+                      <em>
+                        {calculationValue(
+                          t.output,
+                          nodeIndex.get(t.node_id)?.output_key,
+                        )}
+                      </em>
+                    )}
                     <small>
                       {t.branch ? branchLabel(t.node_id, t.branch) : "终点"}
                     </small>
@@ -1030,7 +1039,7 @@ function Workbench({
                         </span>
                         <strong>
                           {trace
-                            ? fmt(trace.output)
+                            ? calculationValue(trace.output, node.output_key)
                             : node.output_key
                               ? (bindingLabel(node.output_key) ??
                                 node.output_key)
@@ -1159,7 +1168,9 @@ function Workbench({
                         {trace.output !== undefined && (
                           <div className="calculation-total">
                             <span>本步结果</span>
-                            <strong>{fmt(trace.output)}</strong>
+                            <strong>
+                              {calculationValue(trace.output, node.output_key)}
+                            </strong>
                           </div>
                         )}
                       </div>
@@ -1694,29 +1705,31 @@ function Workbench({
                     </div>
                   );
                 })}
-              <div className="editor-row">
-                <label>给付账本完整性</label>
-                <select
-                  aria-label="给付账本完整性"
-                  value={String(
-                    (custom ?? currentCase.input).payment_history
-                      ?.records_complete,
-                  )}
-                  onChange={(e) => {
-                    const next = structuredClone(custom ?? currentCase.input);
-                    next.payment_history!.records_complete =
-                      e.target.value === "null"
-                        ? null
-                        : e.target.value === "true";
-                    setCustom(next);
-                    setStepIndex(0);
-                  }}
-                >
-                  <option value="true">已确认完整</option>
-                  <option value="null">完整性未知</option>
-                  <option value="false">不完整</option>
-                </select>
-              </div>
+              {(custom ?? currentCase.input).payment_history && (
+                <div className="editor-row">
+                  <label>给付账本完整性</label>
+                  <select
+                    aria-label="给付账本完整性"
+                    value={String(
+                      (custom ?? currentCase.input).payment_history
+                        ?.records_complete,
+                    )}
+                    onChange={(e) => {
+                      const next = structuredClone(custom ?? currentCase.input);
+                      next.payment_history!.records_complete =
+                        e.target.value === "null"
+                          ? null
+                          : e.target.value === "true";
+                      setCustom(next);
+                      setStepIndex(0);
+                    }}
+                  >
+                    <option value="true">已确认完整</option>
+                    <option value="null">完整性未知</option>
+                    <option value="false">不完整</option>
+                  </select>
+                </div>
+              )}
               <details>
                 <summary>结构化输入与独立设计预期</summary>
                 <pre>
