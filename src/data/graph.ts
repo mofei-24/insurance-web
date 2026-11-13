@@ -47,7 +47,9 @@ export function createDataset(graph: Graph, options: DatasetOptions) {
   );
   function branchLabel(id: string, branch: string) {
     const custom = graph.view_config?.branch_labels?.[id]?.[branch];
-    if (typeof custom === "string") return custom;
+    const display = (label: string) =>
+      label.replace(/^\s*(?:ordinary|declared)\s*[·：:]\s*/i, "");
+    if (typeof custom === "string") return display(custom);
     if (branch === "unknown") return "需补材料";
     if (branch === "review") return "需复核";
     if (branch === "next") return "继续";
@@ -59,10 +61,10 @@ export function createDataset(graph: Graph, options: DatasetOptions) {
       const labels =
         node.selector?.fact && factIndex.get(node.selector.fact)?.value_labels;
       const label = labels && labels[branch];
-      if (typeof label === "string" && label.trim()) return label;
-      return (
+      if (typeof label === "string" && label.trim()) return display(label);
+      return display(
         responsibilityNames.get(target) ??
-        `${branch} · ${nodeIndex.get(target)?.label ?? target}`
+          `${branch} · ${nodeIndex.get(target)?.label ?? target}`,
       );
     }
     if (target && nodeIndex.get(target)?.kind === "outcome") {
