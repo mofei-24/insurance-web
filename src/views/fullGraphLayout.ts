@@ -43,7 +43,7 @@ const grow = (r: Rect, n: number): Rect => ({
 });
 export const labelWidth = (label: unknown) =>
   [...String(label ?? "")].reduce(
-    (sum, c) => sum + (/[^\x00-\x7f]/.test(c) ? 12 : 7.2),
+    (sum, c) => sum + (/[^\x00-\x7f]/.test(c) ? 13 : 8),
     20,
   );
 
@@ -65,8 +65,8 @@ export async function layoutFlow(
       "elk.algorithm": "layered",
       "elk.direction": "RIGHT",
       "elk.edgeRouting": "ORTHOGONAL",
-      "elk.spacing.nodeNode": "70",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "66",
+      "elk.spacing.nodeNode": "48",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "72",
       "elk.layered.layering.strategy": "LONGEST_PATH_SOURCE",
       "elk.spacing.edgeLabel": "16",
       "elk.layered.spacing.edgeNodeBetweenLayers": "24",
@@ -226,7 +226,8 @@ export function completeRoutes(
       continue;
     const start = endpoint(result, edge, true),
       end = endpoint(result, edge, false);
-    const drop = edge.target.startsWith("dependency:") || edge.data?.foldedExit;
+    const size = result.sizes.get(edge.source)!;
+    const drop = start.y === result.positions.get(edge.source)!.y + size.height;
     const a = { x: start.x + (drop ? 0 : 26), y: start.y + (drop ? 26 : 0) },
       b = { x: end.x - 26, y: end.y };
     const points = avoidObstacles(
@@ -252,25 +253,28 @@ export function placeLabels(
     const width = labelWidth(edge.label),
       height = 26;
     const candidates: { x: number; y: number; leader?: ElkPoint }[] = [];
+    for (let i = 1; i < route.points.length; i++) {
+      const a = route.points[i - 1],
+        b = route.points[i];
+      if (a.y === b.y && Math.abs(a.x - b.x) >= width + 32) {
+        for (const ratio of [0.5, 0.25, 0.75])
+          candidates.push({ x: a.x + (b.x - a.x) * ratio, y: a.y });
+      }
+    }
+    for (let i = 1; i < route.points.length; i++) {
+      const a = route.points[i - 1],
+        b = route.points[i];
+      if (a.x === b.x && Math.abs(a.y - b.y) >= 62) {
+        for (const ratio of [0.5, 0.3, 0.7])
+          candidates.push({ x: a.x, y: a.y + (b.y - a.y) * ratio });
+      }
+    }
     if (route.labelX !== undefined && route.labelY !== undefined)
       candidates.push({
         x: route.labelX,
         y: route.labelY,
         leader: route.leader,
       });
-    for (let i = 1; i < route.points.length; i++) {
-      const a = route.points[i - 1],
-        b = route.points[i];
-      if (a.y === b.y && Math.abs(a.x - b.x) >= width + 16) {
-        for (const ratio of [0.5, 0.25, 0.75])
-          for (const dy of [-18, 18])
-            candidates.push({ x: a.x + (b.x - a.x) * ratio, y: a.y + dy });
-      } else if (a.x === b.x && Math.abs(a.y - b.y) >= 50) {
-        for (const ratio of [0.5, 0.3, 0.7])
-          for (const dx of [-width / 2 - 10, width / 2 + 10])
-            candidates.push({ x: a.x + dx, y: a.y + (b.y - a.y) * ratio });
-      }
-    }
     const clear = (c: { x: number; y: number }, lines: boolean) => {
       const rect = { x: c.x - width / 2, y: c.y - height / 2, width, height };
       return (

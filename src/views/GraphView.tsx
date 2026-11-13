@@ -5,9 +5,9 @@ import {
   EdgeText,
   getSmoothStepPath,
   type EdgeProps,
-  Background,
   Controls,
   MiniMap,
+  ViewportPortal,
   Handle,
   Position,
   MarkerType,
@@ -42,11 +42,23 @@ const getElk = () =>
   (elkPromise ??= import("elkjs/lib/elk.bundled.js").then(
     ({ default: Constructor }) => new Constructor(),
   ));
+const paper = "#f8f5ed";
+const ink = "#52534b";
+const green = "#244c3b";
+const stamp = "#903b31";
+const cardWidth = 288;
+const compactCardWidth = 224;
+
+function formatAmount(value: string) {
+  const [whole, fraction] = value.split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${grouped}${fraction ? `.${fraction}` : ""} 元`;
+}
+
 type CardData = {
   title: string;
   sub?: string;
   kind?: string;
-  active?: boolean;
   visited?: boolean;
   muted?: boolean;
   step?: number;
@@ -73,7 +85,10 @@ function CardSurface({
   data: CardData;
   handles?: boolean;
 }) {
-  const { branchLabel, nodeIndex } = useDataset();
+  const { branchLabel, graph, nodeIndex } = useDataset();
+  const hasReference =
+    data.sub && nodeIndex.has(data.sub) && data.kind !== "portal";
+  const isStart = data.sub === graph.entry_id;
   return (
     <div
       className={`${handles ? "flow-card nopan" : "measure-card"} ${data.kind ?? ""} ${data.visited ? "visited" : ""} ${data.muted ? "case-unvisited" : ""} ${data.selected ? "selected" : ""}`}
@@ -93,7 +108,6 @@ function CardSurface({
           onClick={data.phase.open}
           aria-label={`查看${data.phase.title}子树`}
         >
-          <Icon name="tree" size={12} />
           {data.phase.title}
           <Icon name="chevron" size={12} />
         </button>
@@ -103,82 +117,95 @@ function CardSurface({
         onClick={data.onPick}
         aria-pressed={data.selected}
       >
-        <span className="node-meta">
-          <span className="node-meta-label">
-            {data.step !== undefined
-              ? `${String(data.step + 1).padStart(2, "0")} · `
-              : ""}
-            {data.kind === "stage"
-              ? "可展开阶段"
-              : data.kind === "portal"
-                ? "继续到"
-                : data.sub}
-          </span>
-          <span className="node-meta-tail">
-            <span
-              className={`node-current-tag${data.selected ? "" : " reserved"}`}
-            >
-              当前节点
+        {hasReference && <span className="node-reference">{data.sub}</span>}
+        <span className="node-content">
+          {isStart ? (
+            <span className="node-meta node-start">开始</span>
+          ) : !hasReference ? (
+            <span className="node-meta">
+              {data.kind === "stage"
+                ? "可展开阶段"
+                : data.kind === "portal"
+                  ? "继续到"
+                  : data.sub}
             </span>
-            {data.visited ? (
-              <span className="node-check">✓</span>
-            ) : (
-              <Icon
-                name={
-                  data.kind === "decision" || data.kind === "switch"
-                    ? "tree"
-                    : "chevron"
-                }
-                size={14}
-              />
-            )}
-          </span>
-        </span>
-        {data.kind === "calculation" && (
-          <span className="calculation-tag">
-            <Icon name="calculator" size={14} />
-            {data.ratioOutput ? "比例计算" : "金额计算"}
-          </span>
-        )}
-        <strong>{data.title}</strong>
-        {data.kind === "dependency" && (
-          <span className="source-status">
-            {data.sourceText ?? "选择验证案例后查看读取值"}
-          </span>
-        )}
-        {data.kind === "stage" && <span className="node-sub">{data.sub}</span>}
-        {data.kind === "calculation" && (
-          <span
-            className={`node-amount${data.output === undefined ? " pending" : ""}`}
-          >
-            {data.output !== undefined
-              ? data.ratioOutput
-                ? data.output
-                : `¥ ${Number(data.output).toLocaleString("zh-CN", { maximumFractionDigits: 12 })}`
-              : data.pending
+          ) : null}
+          {data.kind === "calculation" && (
+            <span className="calculation-tag">
+              <Icon name="calculator" size={14} />
+              {data.ratioOutput ? "比例计算" : "金额计算"}
+            </span>
+          )}
+          <strong>{data.title}</strong>
+          {data.kind === "dependency" && (
+            <span className="source-status">
+              {data.sourceText ?? "选择验证案例后查看读取值"}
+            </span>
+          )}
+          {data.kind === "stage" && (
+            <span className="node-sub">{data.sub}</span>
+          )}
+          {data.kind === "calculation" && (
+            <span
+              className={`node-amount${data.output === undefined ? " pending" : ""}${!data.pending && data.output === undefined ? " blank" : ""}`}
+              title={
+                !data.pending && data.output === undefined
+                  ? "待案例计算"
+                  : undefined
+              }
+            >
+              {data.output !== undefined
                 ? data.ratioOutput
-                  ? "比例待核定"
-                  : "金额待核定"
-                : "待案例计算"}
+                  ? data.output
+                  : formatAmount(data.output)
+                : data.pending
+                  ? data.ratioOutput
+                    ? "比例待核定"
+                    : "金额待核定"
+                  : "待案例计算"}
+            </span>
+          )}
+        </span>
+        {data.step !== undefined && (
+          <span
+            className="node-step"
+            title={data.selected ? "当前节点" : undefined}
+          >
+            {String(data.step + 1).padStart(2, "0")}
           </span>
         )}
       </button>
       {!!data.stops?.length && (
         <div className="stop-list" aria-label="停止出口">
-          {data.stops.map((stop) => {
-            const label = branchLabel(data.sub ?? "", stop.branch);
-            const description = stop.hit ? `${label}（本例命中）` : label;
+          {[false, true].map((status) => {
+            const rows = data.stops!.filter(
+              (stop) =>
+                (stop.branch === "unknown" || stop.branch === "review") ===
+                status,
+            );
+            if (!rows.length) return null;
             return (
-              <button
-                key={stop.id}
-                title={`${description} → ${nodeIndex.get(stop.target)?.label}。点击查看此结果的详情与条款依据。`}
-                onClick={() => data.onStop?.(stop.target)}
-                className={stop.hit ? "hit" : ""}
-                aria-label={description}
+              <div
+                key={String(status)}
+                className={status ? "stop-status" : "stop-branches"}
               >
-                <Icon name={stop.hit ? "check" : "stop"} size={10} />
-                {label}
-              </button>
+                {rows.map((stop) => {
+                  const label = branchLabel(data.sub ?? "", stop.branch);
+                  const description = stop.hit ? `${label}（本例命中）` : label;
+                  return (
+                    <button
+                      key={stop.id}
+                      data-branch={stop.branch}
+                      title={`${description} → ${nodeIndex.get(stop.target)?.label}。点击查看此结果的详情与条款依据。`}
+                      onClick={() => data.onStop?.(stop.target)}
+                      className={stop.hit ? "hit" : ""}
+                      aria-label={description}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             );
           })}
         </div>
@@ -190,6 +217,13 @@ function CardSurface({
             id={id}
             type="source"
             position={Position.Right}
+            className={
+              id === "dependency" ||
+              !data.ports?.length ||
+              data.stops?.some((stop) => stop.branch === id)
+                ? "quiet-port"
+                : undefined
+            }
             style={
               portStyle(data.portPositions?.find((p) => p.id === id)) ?? {
                 top: `${((i + 1) / (all.length + 1)) * 100}%`,
@@ -213,34 +247,86 @@ function portStyle(port?: { x: number; y: number }) {
 }
 function RoutedEdge(props: EdgeProps) {
   const route = props.data?.route as RoutedLine | undefined;
-  const fallback = getSmoothStepPath(props);
-  const path = route
-    ? route.points
-        .map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`)
-        .join(" ")
-    : fallback[0];
+  const fallback = getSmoothStepPath({ ...props, borderRadius: 16 });
+  const path = route ? roundedPath(route.points) : fallback[0];
+  const showLabel = !!props.label && !props.data?.foldedExit;
   return (
     <>
+      {props.data?.active && <path className="case-highlight" d={path} />}
       <BaseEdge path={path} markerEnd={props.markerEnd} style={props.style} />
-      {route?.leader && (
+      {showLabel && route?.leader && (
         <path
           d={`M${route.leader.x},${route.leader.y} L${route.labelX},${route.labelY}`}
           fill="none"
-          stroke="#8c998e"
+          stroke={ink}
           strokeDasharray="3 3"
         />
       )}
-      <EdgeText
-        x={route?.labelX ?? fallback[1]}
-        y={route?.labelY ?? fallback[2]}
-        label={props.label}
-        labelStyle={{ ...props.labelStyle, fontFamily: "sans-serif" }}
-        labelShowBg
-        labelBgStyle={props.labelBgStyle}
-        labelBgPadding={[8, 5]}
-      />
+      {showLabel && (
+        <EdgeText
+          x={route?.labelX ?? fallback[1]}
+          y={route?.labelY ?? fallback[2]}
+          label={props.label}
+          labelStyle={props.labelStyle}
+          labelShowBg
+          labelBgStyle={props.labelBgStyle}
+          labelBgPadding={[7, 4]}
+        />
+      )}
     </>
   );
+}
+
+function roundedPath(points: RoutedLine["points"]) {
+  const path: string[] = [];
+  for (let index = 0; index < points.length; index++) {
+    const point = points[index];
+    const previous = points[index - 1];
+    const next = points[index + 1];
+    const after = points[index + 2];
+    if (!previous || !next) {
+      path.push(`${previous ? "L" : "M"} ${point.x} ${point.y}`);
+      continue;
+    }
+    // Smooth an offset between two horizontal runs inside the routing channel.
+    if (
+      after &&
+      previous.y === point.y &&
+      next.y === after.y &&
+      point.x === next.x &&
+      point.y !== next.y &&
+      (point.x - previous.x) * (after.x - next.x) > 0
+    ) {
+      const span = Math.min(
+        24,
+        Math.abs(point.x - previous.x) / 2,
+        Math.abs(after.x - next.x) / 2,
+      );
+      const direction = Math.sign(point.x - previous.x);
+      const left = point.x - direction * span;
+      const right = next.x + direction * span;
+      path.push(
+        `L ${left} ${point.y} C ${point.x} ${point.y} ${next.x} ${next.y} ${right} ${next.y}`,
+      );
+      index++;
+      continue;
+    }
+    const incoming = Math.hypot(previous.x - point.x, previous.y - point.y);
+    const outgoing = Math.hypot(next.x - point.x, next.y - point.y);
+    const radius = Math.min(16, incoming / 2, outgoing / 2);
+    if (!radius) {
+      path.push(`L ${point.x} ${point.y}`);
+      continue;
+    }
+    const beforeX = point.x + ((previous.x - point.x) * radius) / incoming;
+    const beforeY = point.y + ((previous.y - point.y) * radius) / incoming;
+    const afterX = point.x + ((next.x - point.x) * radius) / outgoing;
+    const afterY = point.y + ((next.y - point.y) * radius) / outgoing;
+    path.push(
+      `L ${beforeX} ${beforeY} Q ${point.x} ${point.y} ${afterX} ${afterY}`,
+    );
+  }
+  return path.join(" ");
 }
 const nodeTypes = { card: Card };
 const edgeTypes = { routed: RoutedEdge };
@@ -464,11 +550,28 @@ export function GraphView({
     (async () => {
       await document.fonts.ready;
       if (generation.current !== turn || !measurementRef.current) return;
+      const stopRows = new Map<
+        string,
+        { id: string; x: number; y: number }[]
+      >();
       const cards = prepared.nodes.map((n) => {
         const element = [...measurementRef.current!.children].find(
           (el) => (el as HTMLElement).dataset.id === n.id,
         )!.firstElementChild!;
         const size = element.getBoundingClientRect();
+        stopRows.set(
+          n.id,
+          [
+            ...element.querySelectorAll<HTMLButtonElement>(".stop-list button"),
+          ].map((button) => {
+            const row = button.getBoundingClientRect();
+            return {
+              id: button.dataset.branch!,
+              x: Math.ceil(size.width),
+              y: row.top + row.height / 2 - size.top,
+            };
+          }),
+        );
         return {
           id: n.id,
           kind: n.data.kind,
@@ -489,9 +592,7 @@ export function GraphView({
         const ports = next.ports.get(n.id) ?? [
           { id: "in", x: 0, y: size.height / 2 },
         ];
-        n.data.stops?.forEach((stop, i) =>
-          ports.push({ id: stop.branch, x: 40 + i * 32, y: size.height }),
-        );
+        ports.push(...(stopRows.get(n.id) ?? []));
         ports.push({ id: "dependency", x: size.width - 32, y: size.height });
         next.ports.set(n.id, ports);
       }
@@ -552,7 +653,10 @@ export function GraphView({
       data: CardData,
     ) => {
       if (overlay.positions.has(id)) return;
-      const size = { width: 264, height },
+      const size = {
+          width: data.kind === "outcome" ? compactCardWidth : cardWidth,
+          height,
+        },
         position = placeOverlay(overlay, anchor, size);
       overlay.positions.set(id, position);
       overlay.sizes.set(id, size);
@@ -579,7 +683,7 @@ export function GraphView({
     // An explicitly opened result gets priority as the anchor when it has multiple inputs.
     for (const e of [...(targeted ? [targeted] : []), ...shown.values()]) {
       const outcome = nodeIndex.get(e.target)!;
-      appendCard(e.target, e.source, 148, {
+      appendCard(e.target, e.source, 128, {
         title: outcome.label,
         sub: e.target,
         kind: "outcome",
@@ -617,7 +721,12 @@ export function GraphView({
         });
       }
     }
-    const routed = completeRoutes(overlay, extraEdges);
+    const routed = completeRoutes(
+      overlay,
+      extraEdges.map((edge) =>
+        edge.data?.foldedExit ? { ...edge, label: undefined } : edge,
+      ),
+    );
     return {
       ...elements,
       nodes: [...elements.nodes, ...extraNodes],
@@ -637,7 +746,7 @@ export function GraphView({
       pendingFocus.current = focusToken;
       if (focusRequested && node) {
         instance.setCenter(
-          node.position.x + (Number(node.style?.width) || 224) / 2,
+          node.position.x + (Number(node.style?.width) || cardWidth) / 2,
           node.position.y + (Number(node.style?.height) || 130) / 2,
           {
             zoom: 1,
@@ -650,20 +759,17 @@ export function GraphView({
           instance.setCenter(saved.centerX, saved.centerY, {
             zoom: saved.zoom,
           });
-        else if (stage !== "overview") {
+        else if (stage !== "overview" && stage !== "all") {
           const entry =
             elements.nodes.find(
-              (n) =>
-                n.id ===
-                (stage === "all"
-                  ? graph.entry_id
-                  : stages.find((s) => s.id === stage)?.ids[0]),
+              (n) => n.id === stages.find((s) => s.id === stage)?.ids[0],
             ) ?? elements.nodes.find((n) => n.type === "card");
           const bounds = containerRef.current;
           if (entry && bounds) {
             const zoom = Math.min(
-              stage === "all" ? 0.78 : 0.9,
-              (bounds.clientWidth - 40) / (Number(entry.style?.width) || 264),
+              0.9,
+              (bounds.clientWidth - 40) /
+                (Number(entry.style?.width) || cardWidth),
             );
             instance.setViewport({
               x: 32 - entry.position.x * zoom,
@@ -674,7 +780,7 @@ export function GraphView({
               zoom,
             });
           }
-        } else instance.fitView({ padding: 0.07, maxZoom: 1, minZoom: 0.025 });
+        } else instance.fitView({ padding: 0.12, maxZoom: 1, minZoom: 0.025 });
       }
       previousStage.current = stage;
     }, 80);
@@ -686,7 +792,7 @@ export function GraphView({
     previousFitRequest.current = fitRequest;
     pendingFocus.current = focusToken;
     instance.fitView({
-      padding: 0.07,
+      padding: 0.12,
       maxZoom: 1,
       minZoom: 0.025,
       duration: 180,
@@ -710,14 +816,14 @@ export function GraphView({
         const node = current.nodes.find((item) => item.id === current.selected);
         if (node && current.stage !== "overview" && current.stage !== "all") {
           instance.setCenter(
-            node.position.x + (Number(node.style?.width) || 224) / 2,
+            node.position.x + (Number(node.style?.width) || cardWidth) / 2,
             node.position.y + (Number(node.style?.height) || 130) / 2,
             {
               zoom: 1,
             },
           );
         } else {
-          instance.fitView({ padding: 0.07, maxZoom: 1, minZoom: 0.025 });
+          instance.fitView({ padding: 0.12, maxZoom: 1, minZoom: 0.025 });
         }
         return;
       }
@@ -807,10 +913,15 @@ export function GraphView({
     const read = result?.trace
       .flatMap((s) => s.dependencies)
       .find((d) => d.id === e.id);
-    // Slightly emphasise the lines attached to the current node as well.
+    const dependency = e.target.startsWith("dependency:");
     const touchingSelected = e.source === selected || e.target === selected;
     return {
       ...e,
+      data: {
+        ...e.data,
+        route: e.data?.route as RoutedLine | undefined,
+        active,
+      },
       animated: false,
       className: active
         ? "case-path"
@@ -820,37 +931,81 @@ export function GraphView({
       zIndex: active ? 20 : read ? 5 : 0,
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        color: active
-          ? "#2563eb"
-          : e.target.startsWith("dependency:")
-            ? "#7c3aed"
-            : "#7b9080",
+        color: active ? green : ink,
+        width: 15,
+        height: 15,
       },
       style: {
         ...e.style,
-        stroke: active
-          ? "#2563eb"
-          : e.target.startsWith("dependency:")
-            ? "#7c3aed"
-            : "#7b9080",
-        strokeDasharray: e.target.startsWith("dependency:") ? "6 5" : undefined,
-        strokeWidth: active ? 4 : touchingSelected ? 2.4 : 1.3,
+        stroke: active ? green : ink,
+        strokeDasharray: dependency ? "6 5" : undefined,
+        strokeWidth: active ? 2.8 : 1.35,
         opacity:
           result && !active && !read ? (touchingSelected ? 0.9 : 0.38) : 1,
       },
       labelStyle: {
-        fontSize: 12,
-        fontWeight: active ? 600 : 400,
-        fill: active
-          ? "#1d4ed8"
-          : e.target.startsWith("dependency:")
-            ? "#6d28d9"
-            : "#435c49",
+        fontSize: 13,
+        fontWeight: active ? 700 : 500,
+        fill: active ? green : ink,
       },
-      labelBgStyle: { fill: active ? "#eff6ff" : "#f5f7f3" },
+      labelBgStyle: { fill: paper },
       labelBgPadding: [5, 4] as [number, number],
     };
   });
+  const junctions = new Map<
+    string,
+    { x: number; y: number; active: boolean }
+  >();
+  const incoming = new Map<string, typeof edges>();
+  for (const edge of edges) {
+    if (edge.target.startsWith("dependency:")) continue;
+    const group = incoming.get(edge.target) ?? [];
+    group.push(edge);
+    incoming.set(edge.target, group);
+  }
+  for (const [target, group] of incoming) {
+    const routes = group.map((edge) => edge.data.route?.points);
+    if (
+      routes.length < 2 ||
+      routes.some((points) => !points || points.length < 2)
+    )
+      continue;
+    const end = routes[0]!.at(-1)!;
+    const approach = routes.map((points) => points!.at(-2)!);
+    if (approach.some((point) => point.y !== end.y || point.x >= end.x))
+      continue;
+    const x = Math.max(...approach.map((point) => point.x));
+    if (end.x - x < 8) continue;
+    junctions.set(target, {
+      x: Math.min(x + 8, end.x - 6),
+      y: end.y,
+      active: group.some((edge) => edge.data.active),
+    });
+  }
+  const phaseColumns = new Map<number, { id: string; title: string }[]>();
+  const mainCards = elements.nodes;
+  const phaseTop = Math.min(...mainCards.map((node) => node.position.y));
+  const phaseBottom = Math.max(
+    ...mainCards.map(
+      (node) => node.position.y + Number(node.style?.height ?? 0),
+    ),
+  );
+  const phaseRight = Math.max(
+    ...mainCards.map(
+      (node) => node.position.x + Number(node.style?.width ?? 0),
+    ),
+  );
+  if (ready && stage === "all") {
+    for (const phase of stages) {
+      const entry = mainCards.find((node) => node.id === phase.ids[0]);
+      if (!entry) continue;
+      const x = entry.position.x - 16;
+      const column = phaseColumns.get(x) ?? [];
+      column.push(phase);
+      phaseColumns.set(x, column);
+    }
+  }
+  const columns = [...phaseColumns].sort(([a], [b]) => a - b);
   return (
     <div
       className={`graph-shell${result ? " run-mode" : ""}${stage === "all" ? " full-graph" : ""}`}
@@ -891,7 +1046,37 @@ export function GraphView({
         }}
         attributionPosition="bottom-right"
       >
-        <Background color="#ced7cd" gap={22} size={1} />
+        <ViewportPortal>
+          <div className="phase-columns" aria-hidden="true">
+            {columns.map(([x, phases], index) => (
+              <div
+                key={x}
+                className="phase-column"
+                style={{
+                  left: x,
+                  top: phaseTop - 76,
+                  width: (columns[index + 1]?.[0] ?? phaseRight + 16) - x,
+                  height: phaseBottom - phaseTop + 96,
+                }}
+              >
+                <div className="phase-column-heading">
+                  {phases.map((phase) => (
+                    <span key={phase.id}>{phase.title}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flow-junctions" aria-hidden="true">
+            {[...junctions].map(([target, point]) => (
+              <i
+                key={target}
+                className={point.active ? "active" : undefined}
+                style={{ left: point.x, top: point.y }}
+              />
+            ))}
+          </div>
+        </ViewportPortal>
         <Controls showInteractive={false} />
         {exitOwner?.data.stops && (
           <NodeExitList
@@ -913,15 +1098,16 @@ export function GraphView({
                 duration: 160,
               })
             }
-            maskStrokeColor="#6a8870"
+            maskStrokeColor={green}
+            maskColor="#f8f5edb8"
             nodeColor={(n) =>
-              n.data.kind === "calculation"
-                ? "#e8a34f"
-                : n.data.kind === "dependency"
-                  ? "#a78bfa"
-                  : "#91aa93"
+              n.data.kind === "outcome"
+                ? stamp
+                : n.data.visited
+                  ? green
+                  : "#a19f93"
             }
-            nodeStrokeColor={(n) => (n.data.selected ? "#2563eb" : "#5c7661")}
+            nodeStrokeColor={(n) => (n.data.selected ? green : ink)}
             nodeStrokeWidth={2}
             style={{ width: 150, height: 88 }}
           />
@@ -936,9 +1122,9 @@ export function GraphView({
       <div className="graph-legend" aria-label="图例">
         <span
           className="stop-legend"
-          title="节点底部同图标的关键词是停止出口，点击查看对应结果"
+          title="节点右侧带圆点的关键词是停止出口，点击查看对应结果"
         >
-          <Icon name="stop" size={12} />
+          <i className="legend-square outcome" />
           停止出口 · 点击查看结果
         </span>
         {result && (
