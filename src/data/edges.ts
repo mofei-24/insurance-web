@@ -13,3 +13,5 @@ export function exits(n: FlowNode) {
     branch,
   }));
 }
+
+export type FlowEdge = ReturnType<typeof exits>[number];

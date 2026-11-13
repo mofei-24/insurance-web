@@ -1,7 +1,14 @@
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { preview } from "vite";
 // Reuse the bundled browser driver and the already installed Edge. Never download browsers.
 const driver =
@@ -25,7 +32,7 @@ const server = process.env.INSURANCE_URL
       preview: { host: "127.0.0.1", port: 4173, strictPort: true },
     });
 const context = await chromium.launchPersistentContext(
-  path.join(root, ".cache", "browser-profile"),
+  mkdtempSync(path.join(temp, "browser-qa-")),
   {
     executablePath: browser,
     headless: true,
@@ -159,6 +166,30 @@ try {
     path: path.join(root, "test-results", "desktop-overview.png"),
   });
   assert.equal(await page.locator(".flow-card.stage").count(), 4);
+  const stageSelector = page.getByRole("combobox", { name: "选择阶段详情" });
+  const stageOptions = () =>
+    stageSelector
+      .locator("option[value]:not([value=''])")
+      .evaluateAll((options) =>
+        options.map((option) => [option.value, option.textContent]),
+      );
+  const overviewSnapshot = async () => {
+    await page.locator(".flow-card.stage").first().waitFor();
+    return {
+      stages: await stageOptions(),
+      cards: await page
+        .locator(".flow-card.stage .node-main")
+        .allTextContents()
+        .then((cards) => cards.map((card) => card.replace("当前节点", ""))),
+      edges: await page
+        .locator(".react-flow__edge")
+        .evaluateAll((edges) =>
+          edges.map((edge) => [edge.dataset.id, edge.textContent]),
+        ),
+    };
+  };
+  const defaultOverview = await overviewSnapshot();
+  const stageIds = defaultOverview.stages.map(([id]) => id);
   checks.push("1366×768 首屏责任总览四阶段可见");
   assert.equal(await page.locator(".detail-panel").isVisible(), false);
   assert.equal(
@@ -402,19 +433,19 @@ try {
   );
   await page.getByRole("button", { name: "适应全图", exact: true }).click();
   await page.waitForTimeout(250);
-  for (const stage of ["common", "death", "disability", "payment"]) {
+  for (const stage of stageIds) {
     await page
       .getByRole("combobox", { name: "选择阶段详情" })
       .selectOption(stage);
     await page.waitForTimeout(450);
     await inspectDiagram(`${stage}子树文字无重叠、节点内容无裁切`);
-    if (stage === "disability") {
+    if (stage === "responsibility:RESP_DISABILITY") {
       const entry = await page
         .locator('.react-flow__node[data-id="A01"]')
         .boundingBox();
       assert.ok(entry.width > 220, "子树首次进入以可读比例展示入口");
     }
-    if (stage === "disability")
+    if (stage === "responsibility:RESP_DISABILITY")
       await page.screenshot({
         path: path.join(root, "test-results", "disability-readable.png"),
       });
@@ -654,7 +685,7 @@ try {
   );
   await exclusionHit.waitFor();
   assert.equal(await exclusionHit.count(), 1);
-  assert.equal(await exclusionHit.innerText(), "命中免责");
+  assert.equal(await exclusionHit.innerText(), "存在适用免责");
   const contrast = await exclusionHit.evaluate((button) => {
     const style = getComputedStyle(button);
     const luminance = (rgb) => {
@@ -713,7 +744,7 @@ try {
     false,
   );
   const mobileCanvas = await page.locator(".graph-shell").boundingBox();
-  for (const id of ["common", "death", "disability", "payment"]) {
+  for (const id of stageIds) {
     const card = await page
       .locator(`.react-flow__node[data-id="${id}"]`)
       .boundingBox();
@@ -726,7 +757,11 @@ try {
   await page.screenshot({
     path: path.join(root, "test-results", "mobile-cases.png"),
   });
-  await page.locator('.react-flow__node[data-id="death"] .node-main').click();
+  await page
+    .locator(
+      '.react-flow__node[data-id="responsibility:RESP_DEATH"] .node-main',
+    )
+    .click();
   await page.locator('.react-flow__node[data-id="D04"] .node-main').waitFor();
   await page.getByRole("button", { name: "适应视图", exact: true }).click();
   await page.waitForTimeout(300);
@@ -734,6 +769,269 @@ try {
   assert.equal(await page.locator(".node-title code").innerText(), "D04");
   assert.ok(await page.locator(".node-title").isVisible());
   checks.push("390px窄屏切换、总览自适应与页面无横向溢出");
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const treeSelector = page.getByRole("combobox", { name: "切换语义树" });
+  const importInput = page.locator('.topbar input[type="file"]');
+  const browseOriginal = page.getByRole("button", {
+    name: "阅读条款全文",
+    exact: true,
+  });
+  const closeOriginal = page.getByRole("button", {
+    name: "关闭原文",
+    exact: true,
+  });
+  const sourceDialog = page.getByRole("dialog", { name: "保险条款原文" });
+  const materials = path.join(root, "materials");
+  const borrowerImports = [];
+  for (const [index, filename] of [
+    "借款人意外伤害保险_语义树.json",
+    "借款人意外伤害保险_融合语义树.json",
+  ].entries()) {
+    await importInput.setInputFiles(path.join(materials, filename));
+    await treeSelector
+      .locator("option")
+      .nth(index + 1)
+      .waitFor({ state: "attached" });
+    assert.match(await treeSelector.inputValue(), /^local-/);
+    borrowerImports.push(await treeSelector.inputValue());
+    assert.deepEqual(await overviewSnapshot(), defaultOverview);
+    assert.equal(
+      await page.getByRole("region", { name: "待关联条款原文" }).count(),
+      0,
+    );
+    await browseOriginal.click();
+    assert.match(await sourceDialog.innerText(), /51 处已核验来源/);
+    await closeOriginal.click();
+    await stageSelector.selectOption("responsibility:RESP_DEATH");
+    await page.locator('.react-flow__node[data-id="REFUND_CALC"]').waitFor();
+    await page.getByRole("button", { name: "节点索引 53", exact: true }).click();
+    await page.getByRole("textbox", { name: "搜索条款或节点" }).fill("X01");
+    await page.locator(".node-index").filter({ hasText: "X01" }).click();
+    assert.match(
+      await page.locator(".detail-scroll").innerText(),
+      /引用规则.*17/s,
+    );
+    assert.equal(await page.locator(".detail-scroll .exclusion").count(), 17);
+    await page.getByRole("textbox", { name: "搜索条款或节点" }).fill("D04");
+    await page.locator(".node-index").filter({ hasText: "D04" }).click();
+    assert.match(
+      await page.locator(".calculation-intro").innerText(),
+      /取较小值.*已付伤残金/s,
+    );
+  }
+  checks.push(
+    "两版借款人 JSON 自动匹配原文，并与内置树共享阶段、总览、返还路径、计算和规则详情",
+  );
+
+  const customQuote = "第二棵树的专属条款正文。";
+  const customMarkdown = Buffer.from(
+    "前言也应进入目录。\r\n\r\n# 合同总则\r\n\r\n## 特别约定\r\n\r\n" +
+      customQuote +
+      "\r\n",
+  );
+  const expectedHash = createHash("sha256")
+    .update(customMarkdown)
+    .digest("hex");
+  const importedSource = {
+    id: "ALT_SOURCE",
+    article: "6.1",
+    heading_path: ["6.1"],
+    locator: {
+      line_start: 7,
+      line_end: 7,
+      quote: customQuote,
+    },
+  };
+  const importedGraph = {
+    schema_version: graph.schema_version,
+    title: "自定义语义树",
+    document: { source_file: "custom.md" },
+    provenance: {
+      business_source: { file: "custom.md", sha256: expectedHash },
+    },
+    entry_id: "ALT_ENTRY",
+    nodes: [
+      {
+        id: "ALT_ENTRY",
+        kind: "entry",
+        label: "自定义入口",
+        next: "ALT_DECISION",
+        source_refs: [],
+      },
+      {
+        id: "ALT_DECISION",
+        kind: "decision",
+        label: "自定义判断",
+        condition: { literal: true },
+        routes: { true: "ALT_PASS", false: "ALT_FAIL" },
+        source_refs: ["ALT_SOURCE"],
+      },
+      {
+        id: "ALT_PASS",
+        kind: "outcome",
+        label: "自定义结果",
+        code: "LOCAL_PASS",
+        source_refs: ["ALT_SOURCE"],
+      },
+      {
+        id: "ALT_FAIL",
+        kind: "outcome",
+        label: "不满足条件",
+        code: "LOCAL_FAIL",
+        source_refs: ["ALT_SOURCE"],
+      },
+    ],
+    sources: [importedSource],
+    responsibilities: [
+      {
+        id: "ALT_RESP",
+        name: "自定义责任",
+        entry_node: "ALT_DECISION",
+        node_ids: ["ALT_DECISION"],
+        source_refs: ["ALT_SOURCE"],
+      },
+    ],
+    facts: [],
+    rules: [],
+    shared_rules: [],
+    amount_rules: [],
+    responsibility_relations: [],
+    unresolved: [],
+  };
+  const importFile = (name, value) =>
+    importInput.setInputFiles({
+      name,
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(value)),
+    });
+  const importMarkdown = (name, buffer) =>
+    page.locator('input[aria-label="条款原文文件"]').setInputFiles({
+      name,
+      mimeType: "text/markdown",
+      buffer,
+    });
+  const pending = page.getByRole("region", { name: "待关联条款原文" });
+  await importFile("custom.json", importedGraph);
+  await pending.waitFor();
+  assert.match(await pending.innerText(), /custom\.md/);
+  const previousTree = await treeSelector.inputValue();
+  await importMarkdown("custom.md", Buffer.from("不同版本"));
+  await page.getByRole("alert").filter({ hasText: "原文版本不一致" }).waitFor();
+  assert.equal(await treeSelector.inputValue(), previousTree);
+  await importMarkdown("renamed.md", customMarkdown);
+  const altNode = page.locator(
+    '.react-flow__node[data-id="ALT_DECISION"] .node-main',
+  );
+  await page
+    .locator('.react-flow__node[data-id="responsibility:ALT_RESP"] .node-main')
+    .waitFor();
+  const customTree = await treeSelector.inputValue();
+  assert.notEqual(customTree, previousTree);
+  assert.ok(
+    await page
+      .getByRole("button", { name: "验证案例", exact: true })
+      .isDisabled(),
+  );
+  assert.equal(
+    await page.locator('.react-flow__node[data-id="D04"]').count(),
+    0,
+  );
+  assert.match(
+    await page.getByRole("combobox", { name: "选择阶段详情" }).innerText(),
+    /自定义责任/,
+  );
+  assert.match(
+    await page.getByRole("tree").innerText(),
+    /前言也应进入目录|合同总则/,
+  );
+  await page.getByRole("button", { name: "责任总览", exact: true }).click();
+  await page
+    .locator('.react-flow__node[data-id="responsibility:ALT_RESP"] .node-main')
+    .click();
+  await altNode.click();
+  await page.locator(".evidence-preview .source-card").click();
+  assert.match(await sourceDialog.innerText(), /renamed\.md/);
+  assert.match(
+    await sourceDialog.locator('[data-line="7"].highlight').innerText(),
+    new RegExp(customQuote),
+  );
+  await sourceDialog.getByRole("button", { name: /ALT_DECISION/ }).click();
+  await sourceDialog.waitFor({ state: "hidden" });
+  await importFile("invalid.json", {
+    ...importedGraph,
+    entry_id: "MISSING_ENTRY",
+  });
+  await page.locator(".dataset-error").waitFor();
+  assert.match(await page.locator(".dataset-error").innerText(), /入口不存在/);
+  assert.equal(await treeSelector.inputValue(), customTree);
+  await importFile("bad-location.json", {
+    ...importedGraph,
+    sources: [
+      {
+        ...importedSource,
+        locator: { ...importedSource.locator, line_start: 5, line_end: 5 },
+      },
+    ],
+  });
+  await page.getByRole("alert").filter({ hasText: "原文定位失配" }).waitFor();
+  assert.equal(await treeSelector.inputValue(), customTree);
+  await page.getByRole("button", { name: "取消导入", exact: true }).click();
+  await page.reload();
+  for (const id of borrowerImports) {
+    await treeSelector.selectOption(id);
+    assert.deepEqual(await overviewSnapshot(), defaultOverview);
+  }
+  await treeSelector.selectOption(customTree);
+  await browseOriginal.click();
+  assert.match(await sourceDialog.innerText(), /renamed\.md/);
+  await closeOriginal.click();
+  const restoredCount = await treeSelector.locator("option").count();
+  await importFile("another.json", { ...importedGraph, title: "另一棵语义树" });
+  await treeSelector
+    .locator("option")
+    .nth(restoredCount)
+    .waitFor({ state: "attached" });
+  assert.equal(
+    await page.getByRole("alert").count(),
+    0,
+    await page.getByRole("alert").allTextContents(),
+  );
+  assert.equal(await pending.count(), 0, await pending.allTextContents());
+  // 选择框只显示条款原文 MD 名称，不拼语义树标题、版本号或内置/导入状态
+  assert.doesNotMatch(await treeSelector.innerText(), /另一棵语义树/);
+  assert.doesNotMatch(
+    await treeSelector.innerText(),
+    /insurance_semantic_graph|fusion-1\.0|内置|已导入|导入 1\.0/,
+    "条款选择框不应包含语义树版本与导入状态",
+  );
+  assert.match(await treeSelector.innerText(), /renamed/);
+  assert.notEqual(await treeSelector.inputValue(), customTree);
+  await browseOriginal.click();
+  assert.match(await sourceDialog.innerText(), new RegExp(customQuote));
+  await closeOriginal.click();
+  await importFile("without-hash.json", {
+    ...importedGraph,
+    provenance: undefined,
+  });
+  await pending.waitFor();
+  await importMarkdown("renamed.md", customMarkdown);
+  await treeSelector
+    .locator("option")
+    .nth(restoredCount + 1)
+    .waitFor({ state: "attached" });
+  await page.getByRole("button", { name: "数据与验证", exact: true }).click();
+  await page.getByText(/来源版本未由哈希确认/).waitFor();
+  await page.getByRole("button", { name: "关闭报告", exact: true }).click();
+  await treeSelector.selectOption("borrower-2022");
+  await page.getByRole("button", { name: "验证案例", exact: true }).click();
+  assert.match(await page.locator(".result-strip").innerText(), /普通意外身故/);
+  assert.equal(
+    await page.locator('.react-flow__node[data-id="ALT_DECISION"]').count(),
+    0,
+  );
+  checks.push(
+    "手选改名 MD、版本与定位拦截、目录和双向定位、责任总览、刷新恢复及复用原文",
+  );
   assert.deepEqual(errors, []);
   writeFileSync(
     path.join(root, "test-results", "browser-qa.json"),

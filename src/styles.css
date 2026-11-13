@@ -131,9 +131,176 @@ button.primary,
   color: var(--dark);
 }
 .product-title h1 {
+  max-width: 268px;
   font-size: 16px;
   font-weight: 600;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-title > svg {
+  flex-shrink: 0;
+}
+/* 条款选择框：宽度固定，不随名称长度变化；点击后由浮层完整展示名称 */
+.dataset-select-wrap {
+  position: relative;
+  min-width: 0;
+}
+.dataset-select {
+  display: block;
+  width: 268px;
+  max-width: 100%;
+  height: 32px;
+  padding: 4px 26px 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #f7faf4;
+  color: var(--dark);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  appearance: none;
+  -webkit-appearance: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.dataset-select:focus-visible {
+  outline: 2px solid #1b5736;
+  outline-offset: 1px;
+}
+.dataset-caret {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  display: flex;
+  transform: translateY(-50%) rotate(90deg);
+  color: #5d7253;
+  pointer-events: none;
+}
+.dataset-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  width: max-content;
+  min-width: 300px;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(27, 52, 33, 0.16);
+}
+.dataset-menu-head {
+  margin: 2px 8px 6px;
+  font-size: 11px;
+  color: #718068;
+}
+.dataset-option {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dark);
+  text-align: left;
+  cursor: pointer;
+}
+.dataset-option:hover,
+.dataset-option:focus-visible {
+  background: #f1f6ec;
+  outline: none;
+}
+.dataset-option.active {
+  background: #eaf3e4;
+}
+.dataset-option-name {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.dataset-option-name > svg {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  color: #2e6b40;
+}
+.dataset-option-meta {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #718068;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.topbar-actions {
+  display: flex;
+  justify-self: end;
+  align-items: center;
+  gap: 4px;
+}
+.topbar-actions button {
+  white-space: nowrap;
+}
+.dataset-error {
+  margin: 0;
+  padding: 8px 16px;
+  background: #fff0ea;
+  color: #8c3629;
+  overflow-wrap: anywhere;
+}
+.dataset-association {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 16px;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  background: #fff1d2;
+  border-left: 5px solid #b45309;
+  border-bottom: 1px solid #e3ae62;
+  color: #62320a;
+  overflow-wrap: anywhere;
+}
+.dataset-association-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.dataset-association-message svg {
+  color: #92400e;
+}
+.dataset-association strong {
+  font-size: 14px;
+}
+.dataset-association p {
+  margin-top: 4px;
+}
+.dataset-association-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dataset-association-actions .primary {
+  background: #92400e;
+}
+.dataset-association-actions .primary:hover {
+  background: #78350f;
+  color: white;
+}
+.dataset-association-actions .quiet {
+  color: inherit;
 }
 .product-title h1 span {
   font-size: 13px;
@@ -1851,12 +2018,24 @@ button.primary,
   .product-title {
     gap: 6px;
   }
+  .dataset-select {
+    width: min(268px, 56vw);
+  }
+  .product-title h1 {
+    max-width: min(268px, 56vw);
+  }
+  .dataset-menu {
+    min-width: 0;
+    max-width: calc(100vw - 24px);
+  }
   .product-title h1 span {
     font-size: 11px;
   }
-  .report-button {
+  .topbar-actions {
     grid-column: 2;
     grid-row: 1;
+  }
+  .report-button {
     padding: 5px;
   }
   .report-button span {

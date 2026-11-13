@@ -1,11 +1,5 @@
 import type { FlowNode } from "./types";
-
-// These outcomes end the normal settlement and refund paths in the diagram.
-const inlineOutcomes = new Set([
-  "OUT_LOCAL_PASS",
-  "OUT_NO_REFUND",
-  "OUT_REFUND",
-]);
+import { exits } from "./edges";
 
 export const isFoldedOutcome = (node: FlowNode | undefined) =>
-  node?.kind === "outcome" && !inlineOutcomes.has(node.id);
+  node?.kind === "outcome" && node.code !== "LOCAL_PASS" && !exits(node).length;

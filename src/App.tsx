@@ -2,30 +2,21 @@ import { isFoldedOutcome } from "./data/flowDisplay";
 import {
   dependencyTitle,
   dependencyAction,
+  bindingLabel,
   bindingText,
 } from "./data/dependencyLabels";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  graph,
-  nodeIndex,
-  sourceIndex,
-  factIndex,
-  contract,
-  stages,
-  stageOf,
-  exits,
-  flowEdges,
-  branchLabel,
-} from "./data/graph";
-import { validateGraph } from "./data/validate";
-import { examples } from "./cases/examples";
+import { DatasetContext, useDataset } from "./data/graph";
+import { exits } from "./data/edges";
+import { expressionText, referencedRules } from "./data/nodeDetails";
+import { useDatasetImports } from "./data/useDatasetImports";
 import { checkExpected, compareRuns } from "./cases/compare";
 import { evaluate } from "./engine/evaluate";
-import type { CaseInput, Evaluation, Expression, Source } from "./data/types";
+import type { CaseInput, Evaluation, Source } from "./data/types";
 import { ClauseDirectory } from "./views/ClauseDirectory";
+import { DatasetPicker } from "./views/DatasetPicker";
 import { GraphView } from "./views/GraphView";
 import { Icon } from "./views/Icon";
-import manifest from "./data/generated/manifest.json";
 const codeLabels = {
   LOCAL_PASS: "局部责任通过",
   LOCAL_FAIL: "本项条件不成立",
@@ -33,12 +24,6 @@ const codeLabels = {
   NEEDS_REVIEW: "需人工复核",
   SETTLEMENT_PENDING: "给付条件待履行",
 };
-const resultLabel = (r: Pick<Evaluation, "terminal_id" | "code">) =>
-  r.terminal_id === "OUT_REFUND"
-    ? "返还金额核对完成"
-    : r.terminal_id === "OUT_NO_REFUND"
-      ? "完整账本确认无原付款"
-      : codeLabels[r.code];
 const fmt = (v: string | null | undefined) =>
   v == null
     ? "待核定"
@@ -47,15 +32,10 @@ const resultAmountText = (r: Evaluation) =>
   r.amount === null && r.code === "LOCAL_FAIL"
     ? "未进入金额核算"
     : fmt(r.amount);
+const calculationValue = (value: string | undefined, key?: string) =>
+  value !== undefined && key?.endsWith("_ratio") ? value : fmt(value);
 const valueText = (v: unknown) =>
   v === true ? "是" : v === false ? "否" : v == null ? "未知" : String(v);
-function expressionText(e: Expression): string {
-  if (e.fact) return factIndex.get(e.fact)?.label ?? e.fact;
-  if (e.var) return e.var;
-  if ("literal" in e) return String(e.literal);
-  if (e.rule) return graph.rules.find((r) => r.id === e.rule)?.label ?? e.rule;
-  return `${({ all: "全部成立", any: "至少一项成立", not: "不满足", subtract: "差额", multiply: "乘积", min: "取较小值", max: "取较大值", gte: "不少于", lte: "不超过", gt: "大于", eq: "等于", add: "合计" } as Record<string, string>)[e.op!] ?? e.op}（${e.args?.map(expressionText).join("；")}）`;
-}
 function download(name: string, data: unknown) {
   const url = URL.createObjectURL(
     new Blob([JSON.stringify(data, null, 2)], {
@@ -71,9 +51,11 @@ function download(name: string, data: unknown) {
 function SourceCard({
   source,
   onOpen,
+  excerpt,
 }: {
   source: Source;
   onOpen: (s: Source) => void;
+  excerpt?: boolean;
 }) {
   return (
     <button className="source-card" onClick={() => onOpen(source)}>
@@ -86,15 +68,65 @@ function SourceCard({
       </span>
       <p>{source.locator.quote}</p>
       <em>
-        定位原文 <Icon name="arrow" size={13} />
+        {excerpt ? "查看摘录" : "定位原文"} <Icon name="arrow" size={13} />
       </em>
     </button>
   );
 }
 export default function App() {
+  const imports = useDatasetImports();
+  const { dataset } = imports;
+  useEffect(() => {
+    document.title = `条理 · ${dataset.label}`;
+  }, [dataset.label]);
+
+  return (
+    <DatasetContext.Provider value={dataset}>
+      <Workbench key={dataset.id} imports={imports} />
+    </DatasetContext.Provider>
+  );
+}
+
+function Workbench({
+  imports,
+}: {
+  imports: ReturnType<typeof useDatasetImports>;
+}) {
+  const {
+    datasets,
+    pending: pendingImport,
+    importing,
+    restoring,
+    error,
+    storageNotice,
+  } = imports;
+  const dataset = useDataset();
+  const {
+    graph,
+    contract,
+    contractSource,
+    nodeIndex,
+    sourceIndex,
+    stages,
+    stageOf,
+    flowEdges,
+    branchLabel,
+    examples,
+    validation,
+  } = dataset;
+  const initialStage = stages.length ? "overview" : "all";
+  const resultLabel = (r: Pick<Evaluation, "terminal_id" | "code">) => {
+    const status = codeLabels[r.code];
+    const terminal = nodeIndex.get(r.terminal_id)?.label;
+    return terminal && terminal !== status ? `${status} · ${terminal}` : status;
+  };
+  const contractLines = useMemo(() => contract?.split(/\r?\n/), [contract]);
+  const uploadRef = useRef<HTMLInputElement>(null);
+  const originalRef = useRef<HTMLInputElement>(null);
+
   const [mode, setMode] = useState<"browse" | "cases">("browse");
-  const [stage, setStage] = useState("overview");
-  const [selected, setSelected] = useState("D04");
+  const [stage, setStage] = useState(initialStage);
+  const [selected, setSelected] = useState(graph.entry_id);
   const [inspectedExit, setInspectedExit] = useState("");
   const [query, setQuery] = useState("");
   const [panels, setPanels] = useState({ left: true, right: false });
@@ -113,7 +145,7 @@ export default function App() {
   };
   const [leftTab, setLeftTab] = useState("clauses");
   const [detailTab, setDetailTab] = useState("overview");
-  const [caseId, setCaseId] = useState("A");
+  const [caseId, setCaseId] = useState(examples[0]?.id ?? "");
   const [custom, setCustom] = useState<CaseInput | null>(null);
   const [hasRun, setHasRun] = useState(false);
   const [onlyPath, setOnlyPath] = useState(false);
@@ -121,35 +153,40 @@ export default function App() {
   const [showNodeExits, setShowNodeExits] = useState(false);
   const [focusToken, setFocusToken] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
-  const [compareId, setCompareId] = useState("OFFSET");
+  const [compareId, setCompareId] = useState(
+    examples.find((item) => item.id === "OFFSET")?.id ?? examples[0]?.id ?? "",
+  );
   const [comparison, setComparison] = useState(false);
   const [editor, setEditor] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [sourceSelection, setSourceSelection] = useState<Source | null>(null);
   const [mobileTab, setMobileTab] = useState("graph");
   const [reportOpen, setReportOpen] = useState(false);
-  const [exVisited, setExVisited] = useState(false);
+  const [visitedRulesOnly, setVisitedRulesOnly] = useState(false);
   const sourceRef = useRef<HTMLDivElement>(null);
-  const currentCase = examples.find((c) => c.id === caseId)!;
+  const currentCase = examples.find((c) => c.id === caseId);
+  const comparedCase = examples.find((c) => c.id === compareId);
   const result = useMemo(
-    () => (hasRun ? evaluate(graph, custom ?? currentCase.input) : undefined),
-    [currentCase, custom, hasRun],
+    () =>
+      hasRun && currentCase
+        ? evaluate(graph, custom ?? currentCase.input)
+        : undefined,
+    [graph, currentCase, custom, hasRun],
   );
   const otherResult = useMemo(
     () =>
-      comparison
-        ? evaluate(graph, examples.find((c) => c.id === compareId)!.input)
+      comparison && comparedCase
+        ? evaluate(graph, comparedCase.input)
         : undefined,
-    [comparison, compareId],
+    [graph, comparison, comparedCase],
   );
   const differences =
     result && otherResult ? compareRuns(result, otherResult) : [];
   const expectationDiff =
-    result && !custom ? checkExpected(currentCase, result) : [];
-  const validation = useMemo(() => validateGraph(graph, contract), []);
+    result && currentCase && !custom ? checkExpected(currentCase, result) : [];
   const allRuns = useMemo(
     () => examples.map((c) => ({ c, r: evaluate(graph, c.input) })),
-    [],
+    [graph, examples],
   );
   const reviewed = allRuns.filter(({ c }) => c.review_status === "reviewed");
   const covered = new Set(
@@ -166,6 +203,10 @@ export default function App() {
   const selectedNode = nodeIndex.get(selected);
   const node = nodeIndex.get(inspectedExit || selected);
   const trace = result?.trace.find((t) => t.node_id === node?.id);
+  const nodeRules = useMemo(
+    () => (node ? referencedRules(node, dataset) : []),
+    [node, dataset],
+  );
   const dependencyNodeVisible =
     !!selectedNode &&
     (stage === "all" || stageOf(selected)?.id === stage) &&
@@ -185,6 +226,7 @@ export default function App() {
   const pick = (id: string, locate = true) => {
     setSelected(id);
     setInspectedExit("");
+    setVisitedRulesOnly(false);
     setPanels((previous) => ({ ...previous, right: true }));
     setCanvasExpanded(false);
     const index = result?.trace.findIndex((step) => step.node_id === id);
@@ -223,9 +265,10 @@ export default function App() {
     setHasRun(true);
     setStepIndex(0);
     setOnlyPath(false);
-    setSelected("ENTRY_INSURANCE");
+    setSelected(graph.entry_id);
     setInspectedExit("");
-    setStage("overview");
+    setStage(initialStage);
+    setVisitedRulesOnly(false);
     setDetailTab("overview");
   };
   const moveStep = (index: number) => {
@@ -278,8 +321,12 @@ export default function App() {
   });
   const reportData = {
     version: graph.schema_version,
-    graph_sha256: manifest.graph_sha256,
-    contract_sha256: manifest.contract_sha256,
+    title: graph.title,
+    filename: dataset.filename,
+    original_text_checked: !!contract && validation.valid,
+    contract_file: contractSource?.filename,
+    contract_hash_matched: contractSource?.matchedByHash,
+    ...dataset.hashes,
     validation,
     reviewed: {
       passed: reviewed.filter(({ c, r }) => !checkExpected(c, r).length).length,
@@ -309,12 +356,11 @@ export default function App() {
   return (
     <div className={`app ${mode === "cases" ? "case-mode" : ""}`}>
       <header className="topbar">
-        <div className="product-title">
-          <Icon name="shield" size={22} />
-          <h1>
-            借款人意外伤害保险<span>（2022 版）</span>
-          </h1>
-        </div>
+        <DatasetPicker
+          datasets={datasets}
+          current={dataset}
+          onSelect={imports.selectDataset}
+        />
         <nav className="mode-switch" aria-label="工作模式">
           <button
             className={mode === "browse" ? "active" : ""}
@@ -331,6 +377,8 @@ export default function App() {
           </button>
           <button
             className={mode === "cases" ? "active" : ""}
+            disabled={!examples.length}
+            title={examples.length ? undefined : "当前语义树未配置演示案例"}
             aria-pressed={mode === "cases"}
             onClick={() => {
               setMode("cases");
@@ -341,11 +389,92 @@ export default function App() {
             验证案例
           </button>
         </nav>
-        <button className="report-button" onClick={() => setReportOpen(true)}>
-          <Icon name="cases" size={16} />
-          <span>数据与验证</span>
-        </button>
+        <div className="topbar-actions">
+          <input
+            ref={uploadRef}
+            type="file"
+            accept=".json,application/json"
+            hidden
+            disabled={importing || restoring}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = "";
+              if (file) void imports.loadFile(file);
+            }}
+          />
+          <button
+            className="report-button"
+            aria-label="导入语义树"
+            disabled={importing || restoring}
+            onClick={() => uploadRef.current?.click()}
+          >
+            <Icon name="upload" size={16} />{" "}
+            <span>{importing ? "正在导入…" : "导入语义树"}</span>
+          </button>
+          <button
+            className="report-button"
+            aria-label="数据与验证"
+            onClick={() => setReportOpen(true)}
+          >
+            <Icon name="cases" size={16} /> <span>数据与验证</span>
+          </button>
+        </div>
       </header>
+      {pendingImport && (
+        <section className="dataset-association" aria-label="待关联条款原文">
+          <div className="dataset-association-message" role="status">
+            <Icon name="info" size={20} />
+            <div>
+              <strong>待关联条款原文</strong>
+              <p>
+                {pendingImport.filename} ·{" "}
+                {pendingImport.expectedFilename
+                  ? `请选择原文：${pendingImport.expectedFilename}`
+                  : "请选择对应的 Markdown 文件"}
+              </p>
+            </div>
+          </div>
+          <div className="dataset-association-actions">
+            <input
+              ref={originalRef}
+              type="file"
+              accept=".md,.markdown,text/markdown"
+              aria-label="条款原文文件"
+              hidden
+              disabled={importing}
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
+                if (file) void imports.loadOriginal(file);
+              }}
+            />
+            <button
+              className="primary"
+              disabled={importing}
+              onClick={() => originalRef.current?.click()}
+            >
+              选择条款原文
+            </button>
+            <button
+              className="quiet"
+              disabled={importing}
+              onClick={imports.cancelImport}
+            >
+              取消导入
+            </button>
+          </div>
+        </section>
+      )}
+      {error && (
+        <p role="alert" className="dataset-error">
+          {error}
+        </p>
+      )}
+      {storageNotice && (
+        <p role="status" className="dataset-error">
+          {storageNotice}
+        </p>
+      )}
       <nav className="mobile-tabs" aria-label="工作区视图">
         {[
           ["clauses", mode === "cases" ? "案例选择" : "原文目录"],
@@ -409,13 +538,13 @@ export default function App() {
                   className={leftTab === "clauses" ? "active" : ""}
                   onClick={() => setLeftTab("clauses")}
                 >
-                  条款目录
+                  {contract ? "条款目录" : "条款摘录"}
                 </button>
                 <button
                   className={leftTab === "nodes" ? "active" : ""}
                   onClick={() => setLeftTab("nodes")}
                 >
-                  节点索引 <small>53</small>
+                  节点索引 <small>{graph.nodes.length}</small>
                 </button>
               </div>
               <div className="sidebar-scroll">
@@ -450,9 +579,9 @@ export default function App() {
                           ))}
                       </div>
                     ))}
-                    <div className="group-heading">共用结果出口</div>
+                    <div className="group-heading">结果出口</div>
                     {matches
-                      .filter((item) => item.kind === "outcome")
+                      .filter((item) => !stageOf(item.id))
                       .map((item) => (
                         <button
                           key={item.id}
@@ -494,13 +623,14 @@ export default function App() {
           )}
           <div className="sidebar-footer">
             <button
+              disabled={!contract && !graph.sources.length}
               onClick={() => {
                 setSourceSelection(null);
                 setSourceOpen(true);
               }}
             >
               <Icon name="file" size={15} />
-              阅读条款全文
+              {contract ? "阅读条款全文" : "阅读条款摘录"}
               <Icon name="arrow" size={13} />
             </button>
           </div>
@@ -554,32 +684,38 @@ export default function App() {
                   <Icon name="tree" size={15} />
                   完整语义树
                 </button>
-                <button
-                  className={stage === "overview" ? "active" : ""}
-                  aria-pressed={stage === "overview"}
-                  onClick={() => setStage("overview")}
-                >
-                  责任总览
-                </button>
+                {!!stages.length && (
+                  <button
+                    className={stage === "overview" ? "active" : ""}
+                    aria-pressed={stage === "overview"}
+                    onClick={() => setStage("overview")}
+                  >
+                    责任总览
+                  </button>
+                )}
               </div>
-              <span className="navigation-divider" />
-              <label className="stage-navigation">
-                阶段详情
-                <select
-                  aria-label="选择阶段详情"
-                  value={stages.some((s) => s.id === stage) ? stage : ""}
-                  onChange={(event) => {
-                    if (event.target.value) setStage(event.target.value);
-                  }}
-                >
-                  <option value="" disabled hidden />
-                  {stages.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {!!stages.length && (
+                <>
+                  <span className="navigation-divider" />
+                  <label className="stage-navigation">
+                    阶段详情
+                    <select
+                      aria-label="选择阶段详情"
+                      value={stages.some((s) => s.id === stage) ? stage : ""}
+                      onChange={(event) => {
+                        if (event.target.value) setStage(event.target.value);
+                      }}
+                    >
+                      <option value="" disabled hidden />
+                      {stages.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              )}
             </nav>
             <div className="canvas-actions">
               {stage !== "overview" && (
@@ -645,7 +781,7 @@ export default function App() {
               </button>
             </div>
           </div>
-          {mode === "cases" && result && (
+          {mode === "cases" && result && currentCase && (
             <div className={`result-strip ${result.code.toLowerCase()}`}>
               <span className="result-symbol">
                 <Icon
@@ -686,7 +822,7 @@ export default function App() {
             canvasExpanded={canvasExpanded}
             showNodeExits={showNodeExits}
           />
-          {mode === "cases" && result && (
+          {mode === "cases" && result && currentCase && (
             <div className="trace-panel">
               <div className="trace-heading">
                 <strong>
@@ -703,7 +839,7 @@ export default function App() {
                       onChange={(e) => {
                         setOnlyPath(e.target.checked);
                         if (e.target.checked && stage === "overview")
-                          setStage(stageOf(selected)?.id ?? "common");
+                          setStage(stageOf(selected)?.id ?? "all");
                       }}
                     />{" "}
                     仅看本例
@@ -724,7 +860,14 @@ export default function App() {
                   >
                     <span>{String(i + 1).padStart(2, "0")}</span>
                     <b>{t.label}</b>
-                    {t.output !== undefined && <em>{fmt(t.output)}</em>}
+                    {t.output !== undefined && (
+                      <em>
+                        {calculationValue(
+                          t.output,
+                          nodeIndex.get(t.node_id)?.output_key,
+                        )}
+                      </em>
+                    )}
                     <small>
                       {t.branch ? branchLabel(t.node_id, t.branch) : "终点"}
                     </small>
@@ -802,7 +945,9 @@ export default function App() {
                       }[node.kind]
                     }
                   </span>
-                  <span>{sources.length} 处原文依据</span>
+                  <span>
+                    {sources.length} {contract ? "处原文依据" : "处条款摘录"}
+                  </span>
                 </div>
               </div>
               <div className="detail-tabs">
@@ -826,7 +971,7 @@ export default function App() {
               <div className="detail-scroll">
                 {detailTab === "overview" && (
                   <>
-                    {result && (
+                    {result && currentCase && (
                       <div className="detail-section expected-section">
                         <h3>
                           {custom ? "自定义试算" : "设计预期与树的输出"}{" "}
@@ -894,23 +1039,25 @@ export default function App() {
                         </span>
                         <strong>
                           {trace
-                            ? fmt(trace.output)
-                            : node.id === "D04"
-                              ? "身故日保额 − 已付伤残金"
-                              : "按条款规定核算"}
+                            ? calculationValue(trace.output, node.output_key)
+                            : node.output_key
+                              ? (bindingLabel(node.output_key) ??
+                                node.output_key)
+                              : node.label}
                         </strong>
-                        <p>
-                          {node.id === "D04" || node.id === "D07"
-                            ? "扣减后的金额与共享限额余额取较小值。历史给付只读取已核实快照。"
-                            : "先核验依赖与前置条件，再计算金额。"}
-                        </p>
+                        {node.formula && !trace && (
+                          <p>{expressionText(node.formula, dataset, node)}</p>
+                        )}
                       </div>
                     )}
                     {(node.condition || node.selector) && (
                       <div className="detail-section">
                         <h3>这一节点判断什么</h3>
                         <div className="logic-box">
-                          {expressionText((node.condition ?? node.selector)!)}
+                          {expressionText(
+                            (node.condition ?? node.selector)!,
+                            dataset,
+                          )}
                         </div>
                       </div>
                     )}
@@ -981,8 +1128,11 @@ export default function App() {
                                 <Icon name="link" size={15} />
                               </span>
                               <div>
-                                <strong>{dependencyTitle(d.target_id)}</strong>
+                                <strong>{dependencyTitle(d, dataset)}</strong>
                                 <span>{dependencyAction(d)}</span>
+                                {typeof d.effect === "string" && (
+                                  <span>{d.effect}</span>
+                                )}
                                 {binding && (
                                   <>
                                     <span
@@ -1018,34 +1168,39 @@ export default function App() {
                         {trace.output !== undefined && (
                           <div className="calculation-total">
                             <span>本步结果</span>
-                            <strong>{fmt(trace.output)}</strong>
+                            <strong>
+                              {calculationValue(trace.output, node.output_key)}
+                            </strong>
                           </div>
                         )}
                       </div>
                     )}
-                    {node.formula && !trace && (
+                    {node.guard && !trace && (
                       <details className="formula-details">
-                        <summary>查看完整计算表达式</summary>
-                        <p>{expressionText(node.formula)}</p>
-                        {node.guard && (
-                          <p>前置核验：{expressionText(node.guard)}</p>
-                        )}
+                        <summary>查看计算前置条件</summary>
+                        <p>{expressionText(node.guard, dataset, node)}</p>
                       </details>
                     )}
-                    {node.id === "X01" && (
+                    {!!nodeRules.length && (
                       <div className="detail-section">
                         <div className="section-heading">
-                          <h3>16项免责与局部例外</h3>
-                          <button onClick={() => setExVisited((v) => !v)}>
-                            {exVisited ? "显示全部" : "本例已检查"}
-                          </button>
+                          <h3>
+                            引用规则 <small>{nodeRules.length}</small>
+                          </h3>
+                          {trace && (
+                            <button
+                              onClick={() => setVisitedRulesOnly((v) => !v)}
+                            >
+                              {visitedRulesOnly ? "显示全部" : "本例已检查"}
+                            </button>
+                          )}
                         </div>
-                        {graph.rules
+                        {nodeRules
                           .filter(
                             (r) =>
-                              r.id.startsWith("EX") &&
-                              (!exVisited ||
-                                trace?.rules.some((v) => v.id === r.id)),
+                              !trace ||
+                              !visitedRulesOnly ||
+                              trace.rules.some((v) => v.id === r.id),
                           )
                           .map((r) => {
                             const read = trace?.rules.find(
@@ -1056,32 +1211,32 @@ export default function App() {
                                 <summary>
                                   <code>{r.id}</code>
                                   <span>{r.label}</span>
-                                  <small>
-                                    {!read
-                                      ? "未访问"
-                                      : read.status === "unknown"
-                                        ? "未知"
-                                        : read.status === "review"
-                                          ? "需复核"
-                                          : read.value
-                                            ? "成立"
-                                            : "不成立"}
-                                  </small>
+                                  {trace && (
+                                    <small>
+                                      {!read
+                                        ? "未访问"
+                                        : read.status === "unknown"
+                                          ? "未知"
+                                          : read.status === "review"
+                                            ? "需复核"
+                                            : read.value
+                                              ? "成立"
+                                              : "不成立"}
+                                    </small>
+                                  )}
                                 </summary>
-                                <p>{expressionText(r.condition)}</p>
-                                {r.source_refs
-                                  .filter((id) => id !== "S_EXCLUSION")
-                                  .map((id) => (
-                                    <button
-                                      key={id}
-                                      className="text-link"
-                                      onClick={() =>
-                                        openSource(sourceIndex.get(id)!)
-                                      }
-                                    >
-                                      查看 {sourceIndex.get(id)?.article} 原文
-                                    </button>
-                                  ))}
+                                <p>{expressionText(r.condition, dataset)}</p>
+                                {r.source_refs.map((id) => (
+                                  <button
+                                    key={id}
+                                    className="text-link"
+                                    onClick={() =>
+                                      openSource(sourceIndex.get(id)!)
+                                    }
+                                  >
+                                    查看 {sourceIndex.get(id)?.article} 原文
+                                  </button>
+                                ))}
                               </details>
                             );
                           })}
@@ -1153,7 +1308,12 @@ export default function App() {
                         </button>
                       </div>
                       {sources.slice(0, 1).map((s) => (
-                        <SourceCard key={s.id} source={s} onOpen={openSource} />
+                        <SourceCard
+                          key={s.id}
+                          source={s}
+                          onOpen={openSource}
+                          excerpt={!contract}
+                        />
                       ))}
                     </div>
                   </>
@@ -1161,11 +1321,17 @@ export default function App() {
                 {detailTab === "sources" && (
                   <>
                     <p className="muted">
-                      原文引用按来源 ID
-                      定位。点击摘录可查看完整上下文及引用本段的其他节点。
+                      {contract
+                        ? "点击摘录可查看原文上下文和关联节点。"
+                        : "以下摘录来自当前 JSON，点击可查看关联节点。"}
                     </p>
                     {sources.map((s) => (
-                      <SourceCard key={s.id} source={s} onOpen={openSource} />
+                      <SourceCard
+                        key={s.id}
+                        source={s}
+                        onOpen={openSource}
+                        excerpt={!contract}
+                      />
                     ))}
                   </>
                 )}
@@ -1202,13 +1368,17 @@ export default function App() {
                       className="all-issues"
                       onClick={() => setReportOpen(true)}
                     >
-                      查看全图 8 项待核事项 <Icon name="arrow" size={13} />
+                      查看全图 {graph.unresolved.length} 项待核事项{" "}
+                      <Icon name="arrow" size={13} />
                     </button>
                   </>
                 )}
               </div>
               <div className="detail-footer">
-                <button onClick={() => openSource(sources[0])}>
+                <button
+                  disabled={!sources.length}
+                  onClick={() => openSource(sources[0])}
+                >
                   查看条款 <Icon name="arrow" size={13} />
                 </button>
               </div>
@@ -1229,13 +1399,13 @@ export default function App() {
             className="source-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="保险条款原文"
+            aria-label={contract ? "保险条款原文" : "条款摘录"}
           >
             <header>
               <div>
                 <span className="eyebrow">SOURCE DOCUMENT</span>
-                <h2>借款人意外伤害保险条款</h2>
-                <p>中国人民财产保险股份有限公司 · 2022版</p>
+                <h2>{contract ? "保险条款原文" : "条款摘录"}</h2>
+                <p>{contractSource?.filename ?? dataset.label}</p>
               </div>
               <button
                 className="icon-button"
@@ -1248,39 +1418,49 @@ export default function App() {
             </header>
             <div className="source-content">
               <div className="document-lines" ref={sourceRef}>
-                {contract.split(/\r?\n/).map((line, i) => {
-                  const related = graph.sources.filter(
-                    (s) =>
-                      s.locator.line_start <= i + 1 &&
-                      s.locator.line_end >= i + 1,
-                  );
-                  return (
-                    <button
-                      data-line={i + 1}
-                      key={i}
-                      className={`document-line ${sourceSelection && i + 1 >= sourceSelection.locator.line_start && i + 1 <= sourceSelection.locator.line_end ? "highlight" : ""} ${/^#/.test(line) ? "heading-line" : ""}`}
-                      onClick={() =>
-                        setSourceSelection(
-                          related[0] ?? {
-                            id: "UNMAPPED",
-                            article: "未映射段落",
-                            heading_path: [],
-                            locator: {
-                              line_start: i + 1,
-                              line_end: i + 1,
-                              quote: line,
-                            },
-                          },
-                        )
-                      }
-                    >
-                      <span>{i + 1}</span>
-                      <p>
-                        {line.replace(/^#+\s*/, "").replace(/\*\*/g, "") || " "}
-                      </p>
-                    </button>
-                  );
-                })}
+                {contractLines
+                  ? contractLines.map((line, i) => {
+                      const related = graph.sources.filter(
+                        (s) =>
+                          s.locator.line_start <= i + 1 &&
+                          s.locator.line_end >= i + 1,
+                      );
+                      return (
+                        <button
+                          data-line={i + 1}
+                          key={i}
+                          className={`document-line ${sourceSelection && i + 1 >= sourceSelection.locator.line_start && i + 1 <= sourceSelection.locator.line_end ? "highlight" : ""} ${/^#/.test(line) ? "heading-line" : ""}`}
+                          onClick={() =>
+                            setSourceSelection(
+                              related[0] ?? {
+                                id: "UNMAPPED",
+                                article: "未映射段落",
+                                heading_path: [],
+                                locator: {
+                                  line_start: i + 1,
+                                  line_end: i + 1,
+                                  quote: line,
+                                },
+                              },
+                            )
+                          }
+                        >
+                          <span>{i + 1}</span>
+                          <p>
+                            {line.replace(/^#+\s*/, "").replace(/\*\*/g, "") ||
+                              " "}
+                          </p>
+                        </button>
+                      );
+                    })
+                  : graph.sources.map((source) => (
+                      <SourceCard
+                        key={source.id}
+                        source={source}
+                        onOpen={setSourceSelection}
+                        excerpt
+                      />
+                    ))}
               </div>
               <aside className="reverse-links">
                 <h3>本段关联节点</h3>
@@ -1296,10 +1476,12 @@ export default function App() {
                           const s = sourceIndex.get(id);
                           return (
                             s &&
-                            s.locator.line_start <=
-                              sourceSelection.locator.line_end &&
-                            s.locator.line_end >=
-                              sourceSelection.locator.line_start
+                            (contract
+                              ? s.locator.line_start <=
+                                  sourceSelection.locator.line_end &&
+                                s.locator.line_end >=
+                                  sourceSelection.locator.line_start
+                              : s.id === sourceSelection.id)
                           );
                         }),
                       )
@@ -1323,20 +1505,23 @@ export default function App() {
                   </>
                 ) : (
                   <p className="muted">
-                    点击原文中的一段文字，反查引用它的判断与计算节点。
+                    {contract
+                      ? "点击原文中的一段文字，反查引用它的判断与计算节点。"
+                      : "点击摘录，反查引用它的节点。"}
                   </p>
                 )}
               </aside>
             </div>
             <footer>
-              <Icon name="link" size={14} /> 原文行号保持不变 · 共{" "}
-              {contract.split(/\r?\n/).length} 行 · {graph.sources.length}{" "}
-              处已核验来源
+              <Icon name="link" size={14} />
+              {contractLines
+                ? `共 ${contractLines.length} 行 · ${graph.sources.length} 处已核验来源`
+                : `共 ${graph.sources.length} 处 JSON 摘录 · 未与条款全文核对`}
             </footer>
           </section>
         </div>
       )}
-      {comparison && result && otherResult && (
+      {comparison && result && otherResult && currentCase && (
         <div className="modal-backdrop">
           <section
             className="comparison-modal"
@@ -1428,7 +1613,7 @@ export default function App() {
           </section>
         </div>
       )}
-      {editor && (
+      {editor && currentCase && (
         <div className="modal-backdrop">
           <section
             className="editor-modal"
@@ -1520,29 +1705,31 @@ export default function App() {
                     </div>
                   );
                 })}
-              <div className="editor-row">
-                <label>给付账本完整性</label>
-                <select
-                  aria-label="给付账本完整性"
-                  value={String(
-                    (custom ?? currentCase.input).payment_history
-                      ?.records_complete,
-                  )}
-                  onChange={(e) => {
-                    const next = structuredClone(custom ?? currentCase.input);
-                    next.payment_history!.records_complete =
-                      e.target.value === "null"
-                        ? null
-                        : e.target.value === "true";
-                    setCustom(next);
-                    setStepIndex(0);
-                  }}
-                >
-                  <option value="true">已确认完整</option>
-                  <option value="null">完整性未知</option>
-                  <option value="false">不完整</option>
-                </select>
-              </div>
+              {(custom ?? currentCase.input).payment_history && (
+                <div className="editor-row">
+                  <label>给付账本完整性</label>
+                  <select
+                    aria-label="给付账本完整性"
+                    value={String(
+                      (custom ?? currentCase.input).payment_history
+                        ?.records_complete,
+                    )}
+                    onChange={(e) => {
+                      const next = structuredClone(custom ?? currentCase.input);
+                      next.payment_history!.records_complete =
+                        e.target.value === "null"
+                          ? null
+                          : e.target.value === "true";
+                      setCustom(next);
+                      setStepIndex(0);
+                    }}
+                  >
+                    <option value="true">已确认完整</option>
+                    <option value="null">完整性未知</option>
+                    <option value="false">不完整</option>
+                  </select>
+                </div>
+              )}
               <details>
                 <summary>结构化输入与独立设计预期</summary>
                 <pre>
@@ -1573,9 +1760,9 @@ export default function App() {
                 onClick={() => {
                   setHasRun(true);
                   setEditor(false);
-                  setSelected("ENTRY_INSURANCE");
+                  setSelected(graph.entry_id);
                   setInspectedExit("");
-                  setStage("overview");
+                  setStage(initialStage);
                 }}
               >
                 查看试算结果 <Icon name="arrow" size={15} />
@@ -1596,7 +1783,9 @@ export default function App() {
               <div>
                 <span className="eyebrow">DATA & VALIDATION</span>
                 <h2>数据可追溯，结果可复现。</h2>
-                <p>{graph.schema_version} · 图与原文来自项目固定版本</p>
+                <p>
+                  {graph.schema_version} · {dataset.filename ?? "项目固定版本"}
+                </p>
               </div>
               <button
                 className="icon-button"
@@ -1611,12 +1800,19 @@ export default function App() {
               <div className="report-metrics">
                 {[
                   [graph.nodes.length, "流程节点"],
-                  [graph.sources.length, "原文定位已核验"],
                   [
-                    `${reportData.development_regression.passed}/${examples.length}`,
-                    "开发设计预期通过",
+                    graph.sources.length,
+                    contract ? "原文定位已核验" : "条款摘录",
                   ],
-                  [`${covered.size}/53`, "节点覆盖"],
+                  ...(examples.length
+                    ? [
+                        [
+                          `${reportData.development_regression.passed}/${examples.length}`,
+                          "开发设计预期通过",
+                        ],
+                        [`${covered.size}/${graph.nodes.length}`, "节点覆盖"],
+                      ]
+                    : []),
                 ].map(([v, l]) => (
                   <div key={l}>
                     <strong>{v}</strong>
@@ -1624,54 +1820,77 @@ export default function App() {
                   </div>
                 ))}
               </div>
-              <div className="callout warning">
-                <Icon name="info" size={17} />
-                <p>
-                  已有业务审核预期：{reviewed.length} 例；待业务审核：
-                  {examples.length - reviewed.length}{" "}
-                  例。当前通过数反映合成输入与设计预期的一致性，尚无业务审核一致率。
-                </p>
-              </div>
+              {examples.length ? (
+                <div className="callout warning">
+                  <Icon name="info" size={17} />
+                  <p>
+                    已有业务审核预期：{reviewed.length} 例；待业务审核：
+                    {examples.length - reviewed.length}{" "}
+                    例。当前通过数反映合成输入与设计预期的一致性，尚无业务审核一致率。
+                  </p>
+                </div>
+              ) : (
+                <p className="muted">当前语义树未配置演示案例。</p>
+              )}
               <h3>结构与引用校验</h3>
               <p>
                 {validation.valid
-                  ? "通过重复ID、悬空引用、已知运算符、入口可达性、流程/求值循环和原文摘录定位检查。"
+                  ? contract
+                    ? "已通过结构、引用、流程和原文定位检查。"
+                    : "已通过结构、引用和流程检查。原文摘录待与条款全文核对。"
                   : validation.errors.join("；")}
               </p>
-              <div className="hash-list">
-                <span>
-                  语义图 SHA-256 <code>{manifest.graph_sha256}</code>
-                </span>
-                <span>
-                  条款 SHA-256 <code>{manifest.contract_sha256}</code>
-                </span>
-              </div>
-              <h3>覆盖与未测清单</h3>
-              <p>
-                分支覆盖 {coveredEdges.size} / {flowEdges.length}；未访问节点：
-                {graph.nodes
-                  .filter((n) => !covered.has(n.id))
-                  .map((n) => n.id)
-                  .join("、") || "无"}
-                。
-              </p>
-              <p>
-                未访问规则：
-                {reportData.coverage.untested_rules.join("、") ||
-                  "全部规则至少访问一次；各子条件组合仍需扩测"}
-                。
-              </p>
-              <h3>逐例设计预期核对</h3>
-              {allRuns.map(({ c, r }) => (
-                <div className="report-case" key={c.id}>
-                  <span>{c.title}</span>
+              {contractSource && (
+                <p>
+                  关联原文：{contractSource.filename} ·{" "}
+                  {contractSource.matchedByHash
+                    ? "文件哈希一致"
+                    : "来源版本未由哈希确认"}
+                </p>
+              )}
+              {dataset.hashes && (
+                <div className="hash-list">
                   <span>
-                    {checkExpected(c, r).length ? "存在差异" : "通过设计预期"}
+                    语义图 SHA-256 <code>{dataset.hashes.graph_sha256}</code>
                   </span>
-                  <small>待业务审核</small>
+                  <span>
+                    条款 SHA-256 <code>{dataset.hashes.contract_sha256}</code>
+                  </span>
                 </div>
-              ))}
-              <h3>8 项待核事项</h3>
+              )}
+              {!!examples.length && (
+                <>
+                  <h3>覆盖与未测清单</h3>
+                  <p>
+                    分支覆盖 {coveredEdges.size} / {flowEdges.length}
+                    ；未访问节点：
+                    {graph.nodes
+                      .filter((n) => !covered.has(n.id))
+                      .map((n) => n.id)
+                      .join("、") || "无"}
+                    。
+                  </p>
+                  <p>
+                    未访问规则：
+                    {reportData.coverage.untested_rules.join("、") ||
+                      "全部规则至少访问一次；各子条件组合仍需扩测"}
+                    。
+                  </p>
+                  <h3>逐例设计预期核对</h3>
+                  {allRuns.map(({ c, r }) => (
+                    <div className="report-case" key={c.id}>
+                      <span>{c.title}</span>
+                      <span>
+                        {checkExpected(c, r).length
+                          ? "存在差异"
+                          : "通过设计预期"}
+                      </span>
+                      <small>待业务审核</small>
+                    </div>
+                  ))}
+                </>
+              )}
+              <h3>{graph.unresolved.length} 项待核事项</h3>
               {graph.unresolved.map((u) => (
                 <div className="issue-card" key={u.id}>
                   <h4>
@@ -1697,7 +1916,11 @@ export default function App() {
               ))}
             </div>
             <footer>
-              <span>下载含每步输入、规则、出边与依赖的完整报告</span>
+              <span>
+                {examples.length
+                  ? "下载含每步输入、规则、出边与依赖的完整报告"
+                  : "下载当前语义树的结构与引用检查结果"}
+              </span>
               <button
                 className="primary"
                 onClick={() =>

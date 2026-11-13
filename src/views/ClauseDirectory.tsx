@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { contract, graph } from "../data/graph";
+import { useDataset } from "../data/graph";
 import {
   buildClauseDirectory,
   filterClauses,
@@ -8,7 +8,6 @@ import {
 import type { Source } from "../data/types";
 import { Icon } from "./Icon";
 
-const directory = buildClauseDirectory(contract, graph);
 export function ClauseDirectory({
   query,
   selected,
@@ -18,8 +17,28 @@ export function ClauseDirectory({
   selected: string;
   onOpen: (source: Source) => void;
 }) {
+  const { contract, graph } = useDataset();
+  const directory = useMemo(
+    () =>
+      contract
+        ? buildClauseDirectory(contract, graph)
+        : graph.sources.map((source) => ({
+            id: source.id,
+            title: `条款 ${source.article}`,
+            line: source.locator.line_start,
+            source,
+            nodeIds: graph.nodes
+              .filter((node) => node.source_refs.includes(source.id))
+              .map((node) => node.id),
+            children: [],
+          })),
+    [contract, graph],
+  );
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const matches = useMemo(() => filterClauses(directory, query), [query]);
+  const matches = useMemo(
+    () => filterClauses(directory, query),
+    [directory, query],
+  );
   function render(entry: ClauseEntry) {
     if (entry.source)
       return (
@@ -69,7 +88,11 @@ export function ClauseDirectory({
   }
   return (
     <div className="clause-directory">
-      <p className="directory-unit">目录按章、条款、原文段落或分项展开</p>
+      <p className="directory-unit">
+        {contract
+          ? "目录按章、条款、原文段落或分项展开"
+          : "摘录来自当前语义树，待与条款全文核对"}
+      </p>
       <ul role="tree" aria-label="多级条款目录">
         {matches.map(render)}
       </ul>
