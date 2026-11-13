@@ -1,0 +1,112 @@
+.topbar-actions .policy-chat-trigger {
+  white-space: nowrap;
+  border: 1px solid #b9ccbe;
+  border-radius: 6px;
+  padding: 5px 9px;
+  color: var(--green);
+  background: #f2f7f2;
+}
+.policy-chat-trigger:hover,
+.policy-chat-trigger[aria-expanded="true"] {
+  background: #e5f0e6;
+}
+.policy-chat {
+  position: fixed;
+  z-index: 80;
+  top: 62px;
+  right: 16px;
+  width: min(440px, calc(100vw - 32px));
+  height: min(570px, calc(100dvh - 78px));
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 14px 44px #213e3326;
+  overflow: hidden;
+}
+.policy-chat > header,
+.policy-chat > form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+}
+.policy-chat > header {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.policy-chat h2 {
+  font-size: 16px;
+}
+.policy-chat header button {
+  display: inline-flex;
+  padding: 5px;
+}
+.policy-chat-history {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  background: var(--cream);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.policy-chat-turn {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.policy-chat-question,
+.policy-chat-answer {
+  padding: 8px 10px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+.policy-chat-question {
+  justify-self: end;
+  max-width: 90%;
+  background: #e4efe6;
+}
+.policy-chat-answer {
+  background: white;
+  border: 1px solid var(--border);
+}
+.policy-chat-error {
+  color: #8f3528;
+}
+.policy-chat-sources details {
+  padding: 4px 2px;
+}
+.policy-chat-sources summary {
+  cursor: pointer;
+  color: var(--green);
+}
+.policy-chat-sources small {
+  display: block;
+  margin: 4px 0;
+}
+.policy-chat-sources p {
+  white-space: pre-wrap;
+}
+.policy-chat form input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  border: 1px solid #a9beb0;
+  border-radius: 6px;
+  padding: 9px;
+}
+.policy-chat-note {
+  padding: 0 14px 10px;
+  color: #53665b;
+  font-size: 11px;
+}
+@media (max-width: 700px) {
+  .policy-chat {
+    top: 96px;
+    right: 10px;
+    width: min(440px, calc(100vw - 20px));
+    height: min(570px, calc(100dvh - 106px));
+  }
+}

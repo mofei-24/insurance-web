@@ -17,6 +17,7 @@ import { ClauseDirectory } from "./views/ClauseDirectory";
 import { DatasetPicker } from "./views/DatasetPicker";
 import { GraphView } from "./views/GraphView";
 import { Icon } from "./views/Icon";
+import { PolicyChat } from "./views/PolicyChat";
 const codeLabels = {
   LOCAL_PASS: "局部责任通过",
   LOCAL_FAIL: "本项条件不成立",
@@ -390,6 +391,7 @@ function Workbench({
           </button>
         </nav>
         <div className="topbar-actions">
+          <PolicyChat />
           <input
             ref={uploadRef}
             type="file"

@@ -1,0 +1,41 @@
+{
+  "status": "verified",
+  "dataset_version": "2026.10.28",
+  "records": 854,
+  "documents": 36,
+  "dimension": 1024,
+  "model": "text-embedding-v4",
+  "all_texts_preserved": true,
+  "all_float32_vectors_preserved": true,
+  "row_vector_sha256_present": 854,
+  "fresh_milvus_rebuild_and_readback": true,
+  "moved_database_reopened_and_fully_verified": true,
+  "readme_python_examples": [
+    {
+      "example": 1,
+      "passed": true
+    },
+    {
+      "example": 2,
+      "passed": true
+    }
+  ],
+  "model_api_calls": 0,
+  "application_functions_packaged": [],
+  "credential_scan_findings": [],
+  "source_absolute_path_findings": [],
+  "largest_data_file": {
+    "path": "data/records.jsonl",
+    "bytes": 13062184
+  },
+  "all_project_files_under_25_MiB": true,
+  "tested_environment": {
+    "platform": "win32",
+    "python": "3.13.9",
+    "numpy": "2.3.5",
+    "pymilvus": "3.0.2",
+    "milvus-lite": "3.2.2"
+  },
+  "remote_milvus_tested": false,
+  "scope_note": "本报告记录数据与交付校验，不作为问答、检索或保险赔付准确率声明。"
+}

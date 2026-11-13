@@ -1,0 +1,10 @@
+*.md text eol=lf
+*.py text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+checksums.sha256 text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+# 数据文件按原字节保存，避免换行变换破坏校验和
+data/** -text
+database/** -text
