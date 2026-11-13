@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useInternalNode, useStore, useViewport } from "@xyflow/react";
-import { branchLabel, nodeIndex } from "../data/graph";
+import { useDataset } from "../data/graph";
 import { Icon } from "./Icon";
 
 export type StopExit = {
@@ -26,6 +26,7 @@ export function NodeExitList({
   inspectedExit: string;
   onInspect: (id: string) => void;
 }) {
+  const { branchLabel, nodeIndex } = useDataset();
   const node = useInternalNode(nodeId);
   const { x, y, zoom } = useViewport();
   const canvasWidth = useStore((state) => state.width);

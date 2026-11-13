@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import ELK from "elkjs/lib/elk.bundled.js";
 import raw from "../materials/借款人意外伤害保险_融合语义树.json";
-import { stages } from "../src/data/stages";
+import { buildStages } from "../src/data/stages";
 import { isFoldedOutcome } from "../src/data/flowDisplay";
 import { exits } from "../src/data/edges";
 import type { Graph } from "../src/data/types";
@@ -122,7 +122,9 @@ test("横向完整图接通真实分流与汇合，展开停止出口不移动�
   }
 });
 test("伤残子树分支同层、A05唯一汇合，采用实测节点高度与配套路径", async () => {
-  const ids = stages.find((s) => s.id === "disability")!.ids;
+  const ids = buildStages(graph, graph.nodes.flatMap(exits)).find((s) =>
+    s.ids.includes("A01"),
+  )!.ids;
   const connections = primary.filter(
     (e) => ids.includes(e.source) && ids.includes(e.target),
   );

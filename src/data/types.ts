@@ -31,6 +31,7 @@ export interface Dependency {
   scope?: Record<string, unknown>;
   select?: Record<string, unknown>;
   parameters?: Record<string, string>;
+  effect?: string;
   source_refs: string[];
 }
 export interface FlowNode {
@@ -65,10 +66,22 @@ export interface Rule {
   condition: Expression;
   source_refs: string[];
 }
+export interface ViewConfig {
+  stages?: { id: string; title: string; node_ids: string[] }[];
+  branch_labels?: Record<string, Record<string, string>>;
+}
 export interface Graph {
   schema_version: string;
   entry_id: string;
   title: string;
+  document?: {
+    insurer?: string;
+    product?: string;
+    edition?: string;
+    source_file?: string;
+  };
+  provenance?: { business_source?: { file?: string; sha256?: string } };
+  view_config?: ViewConfig;
   nodes: FlowNode[];
   rules: Rule[];
   facts: {
@@ -76,18 +89,32 @@ export interface Graph {
     label: string;
     data_type: string;
     allowed_values?: string[];
+    value_labels?: Record<string, string>;
     source_refs: string[];
   }[];
   sources: Source[];
-  responsibilities: { id: string; name: string; source_refs: string[] }[];
+  responsibilities: {
+    id: string;
+    name: string;
+    source_refs: string[];
+    entry_node?: string;
+    node_ids?: string[];
+  }[];
   shared_rules: {
     id: string;
+    name?: string;
+    label?: string;
     formula: Expression;
     guard: Expression;
     depends_on: Dependency[];
     source_refs: string[];
   }[];
-  amount_rules: { id: string; source_refs: string[] }[];
+  amount_rules: {
+    id: string;
+    name?: string;
+    label?: string;
+    source_refs: string[];
+  }[];
   responsibility_relations: {
     id: string;
     name: string;

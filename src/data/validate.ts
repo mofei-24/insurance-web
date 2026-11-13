@@ -1,6 +1,79 @@
 import type { Graph, Expression } from "./types";
 import { exits } from "./edges";
-export function validateGraph(g: Graph, contract: string) {
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value);
+const isText = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+function validateViewConfig(g: Graph, errors: string[]) {
+  const config: unknown = g.view_config;
+  if (config === undefined) return;
+  if (!isRecord(config)) {
+    errors.push("view_config 应为对象");
+    return;
+  }
+  const nodes = new Map(g.nodes.map((node) => [node.id, exits(node)]));
+  if (config.stages !== undefined) {
+    if (!Array.isArray(config.stages) || !config.stages.length) {
+      errors.push("view_config.stages 应为非空阶段数组");
+    } else {
+      const stageIds = new Set<string>();
+      const assigned = new Set<string>();
+      for (const stage of config.stages) {
+        if (
+          !isRecord(stage) ||
+          !isText(stage.id) ||
+          !isText(stage.title) ||
+          !Array.isArray(stage.node_ids) ||
+          !stage.node_ids.length
+        ) {
+          errors.push("展示阶段需要 ID、名称和非空节点列表");
+          continue;
+        }
+        if (stageIds.has(stage.id)) errors.push(`重复展示阶段 ${stage.id}`);
+        stageIds.add(stage.id);
+        for (const id of stage.node_ids) {
+          if (!isText(id) || !nodes.has(id))
+            errors.push(`展示阶段关联未知节点 ${id}`);
+          else if (assigned.has(id)) errors.push(`节点重复归入展示阶段 ${id}`);
+          else assigned.add(id);
+        }
+      }
+      for (const node of g.nodes) {
+        if (
+          (node.kind !== "outcome" ||
+            nodes.get(node.id)?.length ||
+            node.id === g.entry_id) &&
+          !assigned.has(node.id)
+        ) {
+          errors.push(`展示阶段遗漏流程节点 ${node.id}`);
+        }
+      }
+    }
+  }
+  if (config.branch_labels !== undefined) {
+    if (!isRecord(config.branch_labels)) {
+      errors.push("view_config.branch_labels 应为对象");
+    } else {
+      for (const [id, labels] of Object.entries(config.branch_labels)) {
+        const branches = nodes.get(id);
+        if (!branches || !isRecord(labels)) {
+          errors.push(`分支标签配置无效 ${id}`);
+          continue;
+        }
+        for (const [branch, label] of Object.entries(labels))
+          if (
+            !branches.some((edge) => edge.branch === branch) ||
+            !isText(label)
+          )
+            errors.push(`分支标签配置无效 ${id}.${branch}`);
+      }
+    }
+  }
+}
+
+export function validateGraph(g: Graph, contract?: string) {
   const errors: string[] = [];
   const groups = {
     node: g.nodes,
@@ -23,6 +96,19 @@ export function validateGraph(g: Graph, contract: string) {
   );
   const nodes = new Map(g.nodes.map((n) => [n.id, n]));
   const walkExpr = (e: Expression, path: string) => {
+    if (!e || typeof e !== "object" || Array.isArray(e)) {
+      errors.push(`${path} 表达式格式有误`);
+      return;
+    }
+    if (
+      [e.fact, e.rule, e.var, e.op].some(
+        (field) => field !== undefined && typeof field !== "string",
+      ) ||
+      (e.args !== undefined && !Array.isArray(e.args))
+    ) {
+      errors.push(`${path} 表达式字段格式有误`);
+      return;
+    }
     if (e.fact && !indexes.fact.has(e.fact))
       errors.push(`${path} 未知事实 ${e.fact}`);
     if (e.rule && !indexes.rule.has(e.rule))
@@ -135,23 +221,35 @@ export function validateGraph(g: Graph, contract: string) {
     calcDone.add(id);
   }
   [...g.nodes, ...g.shared_rules].forEach((n) => visitDependency(n.id));
-  const lines = contract.split(/\r?\n/),
+  const lines = contract?.split(/\r?\n/),
     normalize = (s: string) => s.replace(/\s/g, "");
   for (const s of g.sources) {
     const { line_start, line_end, quote } = s.locator;
     if (
+      !Number.isInteger(line_start) ||
+      !Number.isInteger(line_end) ||
       line_start < 1 ||
       line_end < line_start ||
-      line_end > lines.length ||
-      !normalize(lines.slice(line_start - 1, line_end).join("\n")).includes(
-        normalize(quote),
-      )
+      (lines &&
+        (line_end > lines.length ||
+          !normalize(lines.slice(line_start - 1, line_end).join("\n")).includes(
+            normalize(quote),
+          )))
     )
       errors.push(`原文定位失配 ${s.id}（${line_start}–${line_end}）`);
   }
   for (const u of g.unresolved)
     for (const id of u.affected_nodes)
       if (!nodes.has(id)) errors.push(`待核事项 ${u.id} 关联未知节点 ${id}`);
+  for (const responsibility of g.responsibilities) {
+    const ids = [...(responsibility.node_ids ?? [])];
+    if (responsibility.entry_node) ids.push(responsibility.entry_node);
+    for (const id of ids) {
+      if (!nodes.has(id))
+        errors.push(`责任分组 ${responsibility.id} 关联未知节点 ${id}`);
+    }
+  }
+  validateViewConfig(g, errors);
   return {
     valid: errors.length === 0,
     errors,

@@ -9,14 +9,109 @@ export interface ClauseEntry {
   children: ClauseEntry[];
 }
 
+function paragraphEntry(
+  graph: Graph,
+  article: string,
+  headingPath: string[],
+  title: string,
+  start: number,
+  lines: string[],
+): ClauseEntry {
+  const end = start + lines.length - 1;
+  const refs = new Set(
+    graph.sources
+      .filter((s) => s.locator.line_start <= end && s.locator.line_end >= start)
+      .map((s) => s.id),
+  );
+  return {
+    id: `paragraph-${start}`,
+    title,
+    line: start,
+    nodeIds: graph.nodes
+      .filter((n) => n.source_refs.some((id) => refs.has(id)))
+      .map((n) => n.id),
+    children: [],
+    source: {
+      id: refs.size ? `PARAGRAPH_L${start}` : "UNMAPPED",
+      article,
+      heading_path: headingPath,
+      locator: {
+        line_start: start,
+        line_end: end,
+        quote: lines.join("\n").replace(/^#+\s*/, ""),
+      },
+    },
+  };
+}
+
+function buildMarkdownDirectory(lines: string[], graph: Graph): ClauseEntry[] {
+  const roots: ClauseEntry[] = [];
+  const sections: { level: number; entry: ClauseEntry }[] = [];
+  let start = 0;
+  let paragraph: string[] = [];
+  function appendParagraph(title?: string) {
+    if (!paragraph.length) return;
+    const section = sections.at(-1)?.entry;
+    const entries = section?.children ?? roots;
+    const number = entries.filter((item) => item.source).length + 1;
+    const item = paragraph[0].trim().match(/^[（(](\d+)[）)]/);
+    entries.push(
+      paragraphEntry(
+        graph,
+        section?.title ?? "正文",
+        sections.map(({ entry }) => entry.title),
+        title ?? (item ? `第${item[1]}项` : `第${number}段`),
+        start,
+        paragraph,
+      ),
+    );
+    paragraph = [];
+  }
+  for (const [index, line] of lines.entries()) {
+    if (!line.trim()) {
+      appendParagraph();
+      continue;
+    }
+    const heading = line.match(/^ {0,3}(#{1,6})\s+(.+?)\s*#*\s*$/);
+    if (heading) {
+      appendParagraph();
+      const title = heading[2];
+      const level = /^第[一二三四五六七八九十百\d]+部分/.test(title)
+        ? 1
+        : heading[1].length;
+      while (sections.length && sections.at(-1)!.level >= level) sections.pop();
+      const entry: ClauseEntry = {
+        id: `section-${index + 1}`,
+        title,
+        line: index + 1,
+        children: [],
+        nodeIds: [],
+      };
+      (sections.at(-1)?.entry.children ?? roots).push(entry);
+      sections.push({ level, entry });
+      start = index + 1;
+      paragraph = [line.trimStart()];
+      appendParagraph("标题原文");
+    } else {
+      if (!paragraph.length) start = index + 1;
+      paragraph.push(line);
+    }
+  }
+  appendParagraph();
+  return roots;
+}
+
 // The smallest unit is an original paragraph or a numbered item, located by lines.
 export function buildClauseDirectory(
   text: string,
   graph: Graph,
 ): ClauseEntry[] {
+  const lines = text.split(/\r?\n/);
+  if (!/^# 中国人民财产保险股份有限公司借款人意外伤害保险/.test(lines[0])) {
+    return buildMarkdownDirectory(lines, graph);
+  }
   const roots: ClauseEntry[] = [];
   const sections = new Map<string, ClauseEntry>();
-  const lines = text.split(/\r?\n/);
   let current: ClauseEntry | undefined;
   let paragraph: { start: number; lines: string[] } | undefined;
   const flush = () => {
@@ -24,31 +119,21 @@ export function buildClauseDirectory(
       paragraph = undefined;
       return;
     }
-    const start = paragraph.start,
-      end = start + paragraph.lines.length - 1;
-    const quote = paragraph.lines.join("\n").replace(/^#+\s*/, "");
-    const refs = graph.sources.filter(
-      (s) => s.locator.line_start <= end && s.locator.line_end >= start,
-    );
-    const nodeIds = graph.nodes
-      .filter((n) => n.source_refs.some((id) => refs.some((s) => s.id === id)))
-      .map((n) => n.id);
-    const item = quote.match(/^[（(](\d+)[）)]/);
+    const item = paragraph.lines[0]
+      .replace(/^#+\s*/, "")
+      .match(/^[（(](\d+)[）)]/);
     const number =
       current.children.filter((child) => !!child.source).length + 1;
-    current.children.push({
-      id: `paragraph-${start}`,
-      title: item ? `第${item[1]}项` : `第${number}段`,
-      line: start,
-      nodeIds,
-      children: [],
-      source: {
-        id: refs.length ? `PARAGRAPH_L${start}` : "UNMAPPED",
-        article: current.id,
-        heading_path: [current.title],
-        locator: { line_start: start, line_end: end, quote },
-      },
-    });
+    current.children.push(
+      paragraphEntry(
+        graph,
+        current.id,
+        [current.title],
+        item ? `第${item[1]}项` : `第${number}段`,
+        paragraph.start,
+        paragraph.lines,
+      ),
+    );
     paragraph = undefined;
   };
   function section(id: string, title: string, line: number) {

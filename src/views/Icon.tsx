@@ -22,6 +22,7 @@ const paths: Record<string, string> = {
   expand: "M9 3H3v6 M15 3h6v6 M3 15v6h6 M21 15v6h-6",
   back: "m10 5-7 7 7 7 M3 12h18",
   download: "M12 3v12m-5-5 5 5 5-5 M4 16v5h16v-5",
+  upload: "M12 15V3m-5 5 5-5 5 5 M4 16v5h16v-5",
   clock: "M12 7v5l3 2 M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0",
 };
 export function Icon({ name, size = 18 }: { name: string; size?: number }) {

@@ -18,15 +18,9 @@ import {
 } from "@xyflow/react";
 import type { ELK } from "elkjs/lib/elk-api";
 import "@xyflow/react/dist/style.css";
-import {
-  graph,
-  nodeIndex,
-  stages,
-  stageOf,
-  flowEdges,
-  exits,
-  branchLabel,
-} from "../data/graph";
+import { useDataset } from "../data/graph";
+import { buildResponsibilityOverview } from "../data/responsibilityOverview";
+import { exits } from "../data/edges";
 import type { Evaluation } from "../data/types";
 import { isFoldedOutcome } from "../data/flowDisplay";
 import { Icon } from "./Icon";
@@ -78,6 +72,7 @@ function CardSurface({
   data: CardData;
   handles?: boolean;
 }) {
+  const { branchLabel, nodeIndex } = useDataset();
   return (
     <div
       className={`${handles ? "flow-card nopan" : "measure-card"} ${data.kind ?? ""} ${data.visited ? "visited" : ""} ${data.muted ? "case-unvisited" : ""} ${data.selected ? "selected" : ""}`}
@@ -276,6 +271,8 @@ export function GraphView({
   canvasExpanded,
   showNodeExits,
 }: Props) {
+  const dataset = useDataset();
+  const { graph, nodeIndex, stages, stageOf, flowEdges, branchLabel } = dataset;
   const [elements, setElements] = useState<{
     nodes: Node<CardData>[];
     edges: Edge[];
@@ -343,67 +340,38 @@ export function GraphView({
     const go = (id: string) => callbackRef.current.onStage(id),
       pick = (id: string) => callbackRef.current.onSelect(id);
     if (stage === "overview") {
-      const definitions = [
-        {
-          id: "common",
-          x: 0,
-          y: 95,
-          title: "保障与意外前提",
-          sub: "合同、因果与16项免责",
-        },
-        {
-          id: "death",
-          x: 260,
-          y: 0,
-          title: "身故责任",
-          sub: "普通身故 · 宣告死亡 · 生还",
-        },
-        {
-          id: "disability",
-          x: 260,
-          y: 190,
-          title: "伤残责任",
-          sub: "评定时点 · 比例与金额",
-        },
-        {
-          id: "payment",
-          x: 520,
-          y: 95,
-          title: "受领与给付条件",
-          sub: "受益人、份额与保费补交",
-        },
-      ];
-      const ns = definitions.map((d) => ({
-        id: d.id,
-        type: "card",
-        position: { x: d.x, y: d.y },
-        data: {
-          title: d.title,
-          sub: d.sub,
-          kind: "stage",
-          onPick: () => go(d.id),
-          ports: d.id === "common" ? ["death", "disability"] : ["next"],
-        },
-      }));
-      const es = [
-        ["common", "death", "death", "身故"],
-        ["common", "disability", "disability", "伤残"],
-        ["death", "payment", "next", "金额核算后"],
-        ["disability", "payment", "next", "金额核算后"],
-      ].map(([s, t, p, label]) => ({
-        id: `overview-${s}-${t}`,
-        source: s,
-        target: t,
-        sourceHandle: p,
-        label,
-        type: "smoothstep",
-        markerEnd: { type: MarkerType.ArrowClosed, color: "#a2afa5" },
-      }));
-      return { nodes: ns as Node<CardData>[], edges: es };
+      const { groups, connections } = buildResponsibilityOverview(dataset);
+      return {
+        nodes: groups.map((group) => ({
+          id: group.id,
+          type: "card",
+          position: { x: 0, y: 0 },
+          data: {
+            kind: "stage",
+            title: group.title,
+            sub: group.subtitle,
+            onPick: () => go(group.id),
+          },
+        })),
+        edges: connections.map(
+          ({ id, source, target, label, branches, flowEdgeIds }) => ({
+            id,
+            source,
+            target,
+            sourceHandle: target,
+            type: "routed",
+            label,
+            ariaLabel: branches.length ? branches.join("、") : label,
+            data: { flowEdgeIds },
+          }),
+        ),
+      };
     }
     const stageIds =
       stage === "all"
-        ? graph.nodes.filter((n) => !isFoldedOutcome(n)).map((n) => n.id)
+        ? graph.nodes
+            .filter((n) => n.id === graph.entry_id || !isFoldedOutcome(n))
+            .map((n) => n.id)
         : (stages.find((s) => s.id === stage)?.ids ?? []);
     const visible = new Set(
       stageIds.filter((id) => !onlyPath || visited.has(id)),
@@ -482,19 +450,14 @@ export function GraphView({
     }
     return { nodes: ns, edges: es };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layoutKey]);
+  }, [dataset, layoutKey]);
   useEffect(() => {
     const turn = ++generation.current;
-    if (stage === "overview") {
-      setElements({ ...prepared, stage });
-      setLayout(undefined);
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setLayoutError("");
     (async () => {
       await document.fonts.ready;
+      if (generation.current !== turn || !measurementRef.current) return;
       const cards = prepared.nodes.map((n) => {
         const element = [...measurementRef.current!.children].find(
           (el) => (el as HTMLElement).dataset.id === n.id,
@@ -553,11 +516,22 @@ export function GraphView({
       setLoading(false);
       setLayoutError(error.message);
     });
+    return () => {
+      generation.current++;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prepared]);
-  const display = useMemo(() => {
-    if (!layout || elements.stage !== stage || stage === "overview")
-      return elements;
+  const display = useMemo<typeof elements>(() => {
+    if (!layout || elements.stage !== stage) return elements;
+    if (stage === "overview") {
+      return {
+        ...elements,
+        edges: elements.edges.map((e) => ({
+          ...e,
+          data: { ...e.data, route: layout.routes.get(e.id) },
+        })),
+      };
+    }
     const extraNodes: Node<CardData>[] = [];
     const overlay: FullGraphLayout = {
       ...layout,
@@ -612,19 +586,17 @@ export function GraphView({
     ];
     if (dependencies && layout.positions.has(selected)) {
       for (const d of nodeIndex.get(selected)?.depends_on ?? []) {
-        const id = `dependency:${d.target_id}`;
+        const id = `dependency:${d.id}`;
         const binding = visited
           .get(selected)
           ?.dependencies.find((b) => b.id === d.id);
-        const sourceText = binding
-          ? bindingText(binding)
-          : "选择验证案例后查看读取值";
+        const sourceText = binding ? bindingText(binding) : dependencyAction(d);
         const height = Math.max(
           190,
           140 + Math.ceil(sourceText.length / 18) * 22,
         );
         appendCard(id, selected, height, {
-          title: dependencyTitle(d.target_id),
+          title: dependencyTitle(d, dataset),
           kind: "dependency",
           sub: "计算来源",
           sourceText,
@@ -649,7 +621,7 @@ export function GraphView({
         data: { ...e.data, route: routed.routes.get(e.id) },
       })),
     };
-  }, [layout, elements, stage, dependencies, selected, result]);
+  }, [dataset, layout, elements, stage, dependencies, selected, result]);
   currentView.current.nodes = display.nodes;
   useEffect(() => {
     if (!instance || !ready || !elements.nodes.length) return;
@@ -675,7 +647,11 @@ export function GraphView({
         else if (stage !== "overview") {
           const entry =
             elements.nodes.find(
-              (n) => n.id === stages.find((s) => s.id === stage)?.ids[0],
+              (n) =>
+                n.id ===
+                (stage === "all"
+                  ? graph.entry_id
+                  : stages.find((s) => s.id === stage)?.ids[0]),
             ) ?? elements.nodes.find((n) => n.type === "card");
           const bounds = containerRef.current;
           if (entry && bounds) {
@@ -819,18 +795,9 @@ export function GraphView({
       ? nodes.find((node) => node.id === selected && node.data.stops?.length)
       : undefined;
   const edges = display.edges.map((e) => {
-    const active = e.id.startsWith("overview-")
-      ? visited.has(
-          e.target === "death"
-            ? "D01"
-            : e.target === "disability"
-              ? "A01"
-              : "BENEFICIARY",
-        ) &&
-        visited.has(
-          e.source === "common" ? "B01" : e.source === "death" ? "D01" : "A01",
-        )
-      : traversed.has(e.id);
+    const flowEdgeIds = e.data?.flowEdgeIds as string[] | undefined;
+    const active =
+      flowEdgeIds?.some((id) => traversed.has(id)) ?? traversed.has(e.id);
     const read = result?.trace
       .flatMap((s) => s.dependencies)
       .find((d) => d.id === e.id);
