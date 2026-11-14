@@ -1,0 +1,17 @@
+# 本机环境和认证
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+api_key*
+*secret*
+*.log
+.DS_Store
+Thumbs.db
+# 消费方自己的工作数据库和临时输出
+/runtime/
+/tmp/
+# 只忽略运行锁，保留随项目分发的整个预建数据库
+**/LOCK

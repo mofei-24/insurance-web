@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "dataset_name": "卖保险",
+  "dataset_version": "2026.10.28",
+  "created_date": "2026-10-28",
+  "collection_name": "insurance_vectors",
+  "record_order": "chunk_id_ascending",
+  "embedding": {
+    "model": "text-embedding-v4",
+    "dimension": 1024,
+    "dtype": "float32",
+    "normalization": "l2",
+    "metric_type": "COSINE"
+  },
+  "counts": {
+    "records": 849,
+    "documents": 35,
+    "parents": 564,
+    "policy_terms_documents": 35,
+    "policy_terms_records": 849,
+    "product_requirements_documents": 0,
+    "product_requirements_records": 0
+  },
+  "context_status_counts": {
+    "verified_original_parent": 296,
+    "body_only_original_parent_unavailable": 553
+  },
+  "source_model_identity": "Model identity is declared by the supplied embedding manifests; text, vector data and mappings were verified without API calls.",
+  "upstream_snapshot_sha256": "cd392851a2182754d953867e3588b2775abdb7a48d05efb4737b111ecd1c8886",
+  "upstream_rows_sha256": "2b0de3e52f3d76851f8ae4a0606c83420859c35b9586abec714d28aaee166807",
+  "export_metadata_removed_fields": [
+    "source_group",
+    "source_bundle"
+  ],
+  "files": {
+    "records.jsonl": {
+      "sha256": "5f92694ae71574547134811205ef2963c54ef484d5787cf6e03340491cf976bd",
+      "bytes": 13008600
+    },
+    "vectors.npy": {
+      "sha256": "51144876ebb0e751d3c8daecab1ece1e1c9da5871d50ddc30d39a4b526ee4488",
+      "bytes": 3477632
+    },
+    "documents.json": {
+      "sha256": "9e8da9368b4bb7fb79e3720b3efc6d3f886f013353f2381e7c5f38fa688ca021",
+      "bytes": 26490
+    }
+  },
+  "vector_row_integrity": "metadata.vector_sha256 is SHA256 of the matching row as little-endian float32 bytes.",
+  "release_scope": "policy_terms_only"
+}

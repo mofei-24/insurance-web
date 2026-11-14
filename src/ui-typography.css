@@ -1,0 +1,290 @@
+.topbar :is(.mode-switch button) {
+  font-size: 15px;
+}
+.topbar
+  :is(
+    .report-button,
+    .dataset-select,
+    .dataset-menu-head,
+    .dataset-option-name
+  ) {
+  font-size: 14px;
+}
+.topbar .dataset-option-meta {
+  font-size: 13px;
+}
+.panel-heading h2 {
+  font-size: 16px;
+}
+.mobile-tabs button {
+  font-size: 14px;
+}
+
+.sidebar .search input,
+.sidebar
+  :is(
+    .sidebar-tabs button,
+    .clause-folder,
+    .clause-item,
+    .node-index,
+    .group-heading,
+    .sidebar-footer button
+  ) {
+  font-size: 14px;
+}
+.sidebar
+  :is(
+    .directory-unit,
+    .clause-unit,
+    .node-index code,
+    .group-heading span,
+    .sidebar-tabs small,
+    .clause-item small
+  ) {
+  font-size: 12px;
+}
+.sidebar .clause-folder {
+  line-height: 1.7;
+}
+.sidebar .case-item strong {
+  font-size: 15px;
+}
+.sidebar :is(.case-item p, .case-footer) {
+  font-size: 13px;
+}
+.sidebar .case-kicker {
+  font-size: 12px;
+}
+
+.canvas-toolbar :is(.global-views button, .stage-strip button) {
+  font-size: 15px;
+}
+.canvas-toolbar :is(.stage-navigation select, .canvas-actions button) {
+  font-size: 14px;
+}
+.canvas-toolbar .stage-navigation {
+  font-size: 13px;
+}
+.canvas-toolbar {
+  height: auto;
+  min-height: 44px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.canvas-toolbar .view-navigation {
+  flex-wrap: wrap;
+  row-gap: 6px;
+  overflow: visible;
+}
+.panel-actions button {
+  font-size: 13px;
+}
+.panel-actions .sidebar-reopen {
+  min-height: 32px;
+  background: #edf3e6;
+  border-color: #a4ba96;
+  color: #315c35;
+}
+.panel-actions .sidebar-reopen:hover {
+  background: #dfead5;
+}
+.panel-actions .sidebar-reopen span {
+  display: inline;
+}
+.result-strip .current-case-title {
+  font-size: 14px;
+}
+.result-strip strong {
+  font-size: 15px;
+}
+.result-strip > div > span:not(.current-case-title) {
+  font-size: 12px;
+}
+.result-strip > b {
+  font-size: 21px;
+}
+
+.trace-panel :is(.trace-heading strong) {
+  font-size: 15px;
+}
+.trace-panel
+  :is(
+    .trace-heading button,
+    .trace-heading label,
+    .trace-steps b,
+    .trace-nav button
+  ) {
+  font-size: 14px;
+}
+.trace-panel
+  :is(
+    .trace-heading small,
+    .trace-steps button > span,
+    .trace-steps small,
+    .trace-nav > span
+  ) {
+  font-size: 12px;
+}
+.trace-panel .trace-steps em {
+  font-size: 13px;
+}
+.trace-heading {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.trace-heading strong {
+  white-space: nowrap;
+}
+.trace-heading > div {
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+.trace-heading :is(button, label) {
+  white-space: nowrap;
+}
+
+.detail-panel .node-title h2 {
+  font-size: 18px;
+}
+.detail-panel
+  :is(
+    .node-title code,
+    .kind-tag,
+    .node-stage,
+    .detail-section h3 small,
+    .section-heading > button,
+    .dependency-row code,
+    .source-card small,
+    .calculation-lines code,
+    .exclusion code,
+    .exclusion small,
+    .fact-row small
+  ) {
+  font-size: 12px;
+}
+.detail-panel .detail-tabs button {
+  font-size: 14px;
+}
+.detail-panel .detail-section h3 {
+  font-size: 15px;
+}
+.detail-panel
+  :is(
+    .detail-section p,
+    .logic-box,
+    .fact-row,
+    .source-card p,
+    .detail-footer button,
+    .muted,
+    .issue-card p,
+    .calculation-intro p,
+    .callout p
+  ) {
+  font-size: 14px;
+}
+.detail-panel
+  :is(
+    .dependency-row strong,
+    .dependency-row > div > span,
+    .source-card b,
+    .source-card em,
+    .formula-details,
+    .exit-row,
+    .calculation-lines b,
+    .calculation-total,
+    .effect-row,
+    .text-link,
+    .all-issues,
+    .exclusion summary > span,
+    .exclusion p,
+    .expected-row,
+    .expected-verdict
+  ) {
+  font-size: 13px;
+}
+.detail-panel .calculation-intro strong {
+  font-size: 16px;
+}
+.detail-panel .calculation-intro .tiny-label {
+  font-size: 12px;
+}
+.detail-panel :is(.issue-card h3, .issue-card h4) {
+  font-size: 15px;
+}
+.detail-panel .empty,
+.sidebar .empty {
+  font-size: 14px;
+}
+
+.modal-backdrop
+  :is(
+    header p,
+    .document-line p,
+    .reverse-links > p,
+    .report-body > p,
+    .editor-row,
+    .editor-row input,
+    .editor-row select,
+    .editor-body details,
+    .callout p
+  ) {
+  font-size: 14px;
+}
+.modal-backdrop .document-line.heading-line p {
+  font-size: 18px;
+}
+.modal-backdrop
+  :is(
+    .document-line > span,
+    footer,
+    .report-case small,
+    .editor-row code,
+    .hash-list,
+    .hash-list code,
+    .comparison-select label,
+    .difference-row small,
+    .difference-number
+  ) {
+  font-size: 12px;
+}
+.modal-backdrop
+  :is(
+    .report-case,
+    .reverse-node,
+    .difference-row,
+    .report-metrics span,
+    .source-card p,
+    .source-card b,
+    .source-card em,
+    .comparison-select select
+  ) {
+  font-size: 13px;
+}
+.modal-backdrop :is(.comparison-body h3, .report-body > h3, .reverse-links h3) {
+  font-size: 15px;
+}
+.modal-backdrop .source-card small {
+  font-size: 12px;
+}
+.policy-chat {
+  font-size: 14px;
+}
+.policy-chat h2 {
+  font-size: 18px;
+}
+.policy-chat :is(form input, form button) {
+  font-size: 14px;
+}
+.policy-chat :is(.policy-chat-note, .policy-chat-sources small) {
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .result-strip > b {
+    font-size: 18px;
+  }
+  .canvas-toolbar
+    :is(.global-views button, .stage-strip button, .stage-navigation select) {
+    font-size: 13px;
+  }
+}

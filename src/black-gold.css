@@ -1,0 +1,1741 @@
+/* Black-gold theme overrides. The original light-green styles remain the default. */
+:where(html[data-theme="black-gold"]) .flexible-ui .stage-navigation {
+  --stage-text-color: #e4e5df;
+}
+/* traceMenu.css */
+:where(html[data-theme="black-gold"]) .trace-panel .action-menu > summary {
+  border-radius: 3px;
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .trace-panel .action-menu[open] > summary,
+:where(html[data-theme="black-gold"])
+  .trace-panel
+  .action-menu
+  > summary:hover {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .trace-panel .action-menu-content {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #171d22;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"])
+  .trace-panel
+  .trace-nav
+  .current-step-label {
+  color: #b5bebc;
+}
+/* policyChat.css */
+:where(html[data-theme="black-gold"]) .policy-chat {
+  background: #171d22;
+  border-radius: 3px;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .policy-chat-question,
+:where(html[data-theme="black-gold"]) .policy-chat-answer {
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .policy-chat-question {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .policy-chat-answer {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .policy-chat-error {
+  color: #d99586;
+}
+:where(html[data-theme="black-gold"]) .policy-chat form input {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .policy-chat-note {
+  color: #e4e5df;
+}
+/* styles.css */
+:root:where([data-theme="black-gold"]) {
+  color: #e4e5df;
+  background: #171d22;
+  --green: #c9ad75;
+  --dark: #e7e4da;
+  --muted: #96a4a6;
+  --border: #303b40;
+  --cream: #131a1f;
+  --gold: #d7bb80;
+}
+:where(html[data-theme="black-gold"]) button:focus-visible,
+:where(html[data-theme="black-gold"]) a:focus-visible,
+:where(html[data-theme="black-gold"]) summary:focus-visible {
+  outline: 2px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) button:hover {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) button.primary,
+:where(html[data-theme="black-gold"]) .primary {
+  color: #e4e5df;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .primary:hover {
+  background: #0b1014;
+}
+:where(html[data-theme="black-gold"]) .quiet {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .muted {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .topbar {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .dataset-select {
+  border-radius: 3px;
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .dataset-select:focus-visible {
+  outline: 2px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) .dataset-caret {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .dataset-menu {
+  background: #171d22;
+  border-radius: 3px;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .dataset-menu-head {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .dataset-option {
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .dataset-option:hover,
+:where(html[data-theme="black-gold"]) .dataset-option:focus-visible {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .dataset-option.active {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .dataset-option-name > svg {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .dataset-option-meta {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .dataset-error {
+  background: #302321;
+  color: #d99586;
+}
+:where(html[data-theme="black-gold"]) .dataset-association {
+  background: #2a261d;
+  border-left: 5px solid #665433;
+  border-bottom: 1px solid #665433;
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .dataset-association-message svg {
+  color: #d99586;
+}
+:where(html[data-theme="black-gold"]) .dataset-association-actions .primary {
+  background: #302321;
+}
+:where(html[data-theme="black-gold"])
+  .dataset-association-actions
+  .primary:hover {
+  background: #302321;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .product-title h1 span {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .mode-switch {
+  background: #20282e;
+  border: 1px solid #343f45;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .mode-switch button {
+  border-radius: 3px;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .mode-switch button.active {
+  background: var(--green);
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .report-button {
+  color: #b5bebc;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .report-button:hover {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .status-dot {
+  border-radius: 3px;
+  background: #c5a66c;
+}
+:where(html[data-theme="black-gold"]) .badge {
+  border: 1px solid #343f45;
+  background: #20282e;
+  color: #b5bebc;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .workbench {
+  background: #171d22;
+  border: 1px solid #343f45;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .panel-heading {
+  background: #20282e;
+  border-bottom: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) .panel-heading h2 {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .panel-heading h2 svg {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .panel-toggle {
+  border-radius: 3px;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .panel-toggle:hover {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .graph-heading {
+  background: var(--green);
+}
+:where(html[data-theme="black-gold"]) .graph-heading h2,
+:where(html[data-theme="black-gold"]) .graph-heading h2 svg {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .panel-actions button {
+  border: 1px solid #343f45;
+  background: #0b1014;
+  border-radius: 3px;
+  color: #929e9f;
+}
+:where(html[data-theme="black-gold"]) .panel-actions button:hover {
+  background: #c5a66c;
+}
+:where(html[data-theme="black-gold"]) .panel-actions button:focus-visible {
+  outline-color: #343f45;
+}
+:where(html[data-theme="black-gold"]) .sidebar {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .search {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #171d22;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .search input {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .search input::placeholder {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .sidebar-tabs button {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .sidebar-tabs button.active {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .sidebar-tabs button.active:after {
+  background: #c5a66c;
+}
+:where(html[data-theme="black-gold"]) .sidebar-tabs small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .sidebar-scroll {
+  scrollbar-color: #343f45 transparent;
+}
+:where(html[data-theme="black-gold"]) .doc-label {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .clause-item {
+  border-radius: 3px;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .clause-item:hover {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .clause-item.related {
+  background: #20282e;
+  border-color: #343f45;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .article-number {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .clause-item small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .sidebar-footer {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .sidebar-footer button {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .center-panel {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .canvas-toolbar {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .stage-strip button {
+  border-radius: 3px;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .stage-strip button.active {
+  color: #e4e5df;
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .canvas-actions button {
+  color: #b5bebc;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .canvas-actions button.active,
+:where(html[data-theme="black-gold"]) .canvas-actions button:hover {
+  background: #20282e;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .eyebrow {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .mini-dot {
+  border-radius: 3px;
+  background: #c5a66c;
+}
+:where(html[data-theme="black-gold"]) .graph-shell {
+  --graph-paper: #10171c;
+  --graph-sheet: #1b252c;
+  --graph-ink: #e1e6e3;
+  --graph-muted: #9babaf;
+  --graph-rule: #3b4a51;
+  --graph-green: #c9ad75;
+  --graph-stamp: #ca8e7b;
+  --graph-amount: #e2c68b;
+  --graph-highlight: #39372a;
+  --graph-fold: #152027;
+}
+:where(html[data-theme="black-gold"]) :is(.flow-card, .measure-card) {
+  border-radius: 3px;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"])
+  :is(.flow-card, .measure-card).calculation {
+  background: #2a261d;
+}
+:where(html[data-theme="black-gold"]) .flow-card.case-unvisited {
+  background: #2a261d;
+  border-color: #343f45;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .flow-card.selected {
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .visited .node-content > strong {
+  border-radius: 3px;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .node-start::before,
+:where(html[data-theme="black-gold"]) .stop-list button::after {
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .node-step {
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .stop-list {
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .stop-status {
+  background: #2a261d08;
+}
+:where(html[data-theme="black-gold"]) .stop-status button {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .tiny-label {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .graph-shell .react-flow__controls {
+  border-radius: 3px;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .detail-panel {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .kind-tag {
+  color: #b5bebc;
+  border-radius: 3px;
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .kind-tag.calculation {
+  color: #d7b875;
+  background: #2a261d;
+}
+:where(html[data-theme="black-gold"]) .node-title {
+  border-left: 3px solid #343f45;
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .node-title code {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .node-stage {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .detail-tabs button {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .detail-tabs button.active {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .detail-tabs button.active:after {
+  background: #c5a66c;
+}
+:where(html[data-theme="black-gold"]) .detail-scroll {
+  scrollbar-color: #343f45 transparent;
+}
+:where(html[data-theme="black-gold"]) .calculation-intro {
+  border: 1px solid #665433;
+  background: #2a261d;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .calculation-intro .tiny-label {
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .calculation-intro strong {
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .calculation-intro p {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .detail-section h3 {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .detail-section h3 small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .section-heading > button {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .dependency-icon {
+  background: #20282e;
+  border: 1px solid #343f45;
+  color: #b5bebc;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .dependency-row strong {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .dependency-row code {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .green-text {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .warning-text {
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .logic-box {
+  background: #171d22;
+  border-radius: 3px;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .source-card {
+  background: #171d22;
+  border: 1px solid #343f45;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .source-card > span {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .source-card b {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .source-card small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .source-card p {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .source-card em {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .detail-footer {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .detail-footer button {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .formula-details {
+  border-radius: 3px;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .exit-row {
+  border-bottom: 1px solid #343f45;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .exit-row > span:first-child {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .exit-row.active {
+  background: #20282e;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .empty {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .group-heading {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .group-heading span {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .node-index {
+  border-radius: 3px;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .node-index code {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .node-index:hover {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .node-index.active {
+  background: #20282e;
+  box-shadow: none;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .node-index.active code {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .case-item {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .case-item.active {
+  border-color: #343f45;
+  background: #20282e;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .case-kicker {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .case-kicker > span:last-child {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .case-item p {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .case-footer {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .result-strip {
+  border: 1px solid #343f45;
+  background: #20282e;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .result-symbol {
+  background: #273239;
+  color: #b5bebc;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .result-strip strong {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .result-strip > div > span {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .result-strip > b {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .result-strip > button {
+  color: #b5bebc;
+  border-left: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) .result-strip.needs_input,
+:where(html[data-theme="black-gold"]) .result-strip.settlement_pending,
+:where(html[data-theme="black-gold"]) .result-strip.needs_review {
+  background: #2a261d;
+  border-color: #665433;
+}
+:where(html[data-theme="black-gold"]) .result-strip.local_fail {
+  background: #302321;
+  border-color: #62443c;
+}
+:where(html[data-theme="black-gold"]) .trace-panel {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .trace-heading {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .trace-heading small {
+  color: #929e9f;
+}
+:where(html[data-theme="black-gold"]) .trace-heading > div {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .trace-heading button {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .trace-steps {
+  scrollbar-color: #343f45 transparent;
+}
+:where(html[data-theme="black-gold"]) .trace-steps button {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .trace-steps button.active {
+  border-color: #343f45;
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .trace-steps button > span {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .trace-steps small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .trace-steps em {
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .trace-nav {
+  border-top: 1px solid #343f45;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .trace-nav button {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .fact-row {
+  border-bottom: 1px solid #343f45;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .fact-row small {
+  color: #929e9f;
+}
+:where(html[data-theme="black-gold"]) .callout {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #20282e;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .callout.warning {
+  border-color: #665433;
+  background: #2a261d;
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .calculation-lines {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .calculation-lines code {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .calculation-total {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .calculation-total strong {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .effect-row {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .issue-card {
+  border: 1px solid #665433;
+  background: #2a261d;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .issue-label {
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .issue-card h3,
+:where(html[data-theme="black-gold"]) .issue-card h4 {
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .issue-card p {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .text-link {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .all-issues {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .exclusion {
+  border-bottom: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) .exclusion code {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .exclusion summary > span {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .exclusion small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .exclusion p {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .modal-backdrop {
+  background: #0b101464;
+  backdrop-filter: none;
+}
+:where(html[data-theme="black-gold"]) .modal-backdrop > section {
+  background: #171d22;
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .modal-backdrop header p {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .icon-button {
+  color: #b5bebc;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .icon-button:hover {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .document-line:hover {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .document-line > span {
+  color: #929e9f;
+}
+:where(html[data-theme="black-gold"]) .document-line > p {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .document-line.highlight {
+  background: #20282e;
+  border-left-color: #343f45;
+}
+:where(html[data-theme="black-gold"]) .document-line.heading-line p {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .reverse-links {
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .reverse-links h3 {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .reverse-links > p {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .reverse-node {
+  border: 1px solid #343f45;
+  background: #171d22;
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .reverse-node code {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .reverse-node strong {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .reverse-node svg {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .modal-backdrop footer {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .comparison-select > label {
+  background: #171d22;
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .comparison-select strong {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .comparison-select b {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .comparison-select select {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #171d22;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .comparison-body h3,
+:where(html[data-theme="black-gold"]) .report-body > h3 {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .comparison-body h3 small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .difference-row {
+  border-bottom: 1px solid #343f45;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .difference-number {
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .difference-row strong {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .difference-row small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .report-metrics {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"]) .report-metrics > div {
+  border-right: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) .report-metrics strong {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .report-metrics span {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .report-body > p {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .hash-list {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .hash-list code {
+  color: #929e9f;
+}
+:where(html[data-theme="black-gold"]) .report-case {
+  border-bottom: 1px solid #343f45;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .report-case small {
+  color: #929e9f;
+}
+:where(html[data-theme="black-gold"]) .editor-row {
+  border-bottom: 1px solid #343f45;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .editor-row code {
+  color: #929e9f;
+}
+:where(html[data-theme="black-gold"]) .editor-row select,
+:where(html[data-theme="black-gold"]) .editor-row input {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #171d22;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .editor-body details {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .editor-body pre {
+  background: #171d22;
+}
+@media (max-width: 900px) {
+  :where(html[data-theme="black-gold"]) .mobile-tabs button {
+    border-radius: 3px;
+    color: #b5bebc;
+  }
+  :where(html[data-theme="black-gold"]) .mobile-tabs button.active {
+    background: #20282e;
+    color: #e4e5df;
+  }
+}
+:where(html[data-theme="black-gold"]) .expected-section {
+  border-bottom: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) .expected-row {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .expected-row strong {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .expected-verdict {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .result-strip .current-case-title {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .global-views button {
+  border-radius: 3px;
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .global-views button.active {
+  background: #20282e;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .global-views .full-tree-entry {
+  border: 1px solid #343f45;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .navigation-divider {
+  background: #273239;
+}
+:where(html[data-theme="black-gold"]) .stage-navigation {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .stage-navigation select {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #171d22;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .directory-unit {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .clause-directory ul ul {
+  border-left: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) .clause-folder {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .clause-unit {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .node-exit-list {
+  border-radius: 3px;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .kind-tag.calculation {
+  background: #2a261d;
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .return-full-tree {
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .react-flow__minimap {
+  border-radius: 3px;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .phase-entry {
+  background: #273239;
+}
+:where(html[data-theme="black-gold"]) .phase-entry:hover {
+  background: #273239;
+}
+:where(html[data-theme="black-gold"]) .phase-column {
+  border-left: 1px solid #66543333;
+  background: #2a261d07;
+}
+:where(html[data-theme="black-gold"]) .phase-column:nth-child(even) {
+  background: #2a261d0d;
+}
+:where(html[data-theme="black-gold"]) .phase-column-heading {
+  border-bottom: 1px solid #66543333;
+  background: #2a261d;
+}
+:where(html[data-theme="black-gold"]) .flow-junctions i {
+  border-radius: 3px;
+}
+/* ui-typography.css */
+:where(html[data-theme="black-gold"]) .panel-actions .sidebar-reopen {
+  background: #20282e;
+  border-color: #343f45;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .panel-actions .sidebar-reopen:hover {
+  background: #20282e;
+}
+/* flexible-ui.css */
+:where(html[data-theme="black-gold"]) .flexible-ui {
+  --green: #c9ad75;
+  --dark: #e7e4da;
+  --border: #303b40;
+  --muted: #96a4a6;
+  --cream: #131a1f;
+  background: #10161a;
+  color: #d7dedc;
+  color-scheme: dark;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .topbar {
+  height: 58px;
+  padding: 0 16px;
+  background: #0d1317;
+  border-color: #343f45;
+  border-bottom: 1px solid #6a5a394d;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .product-title > svg {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #d8bc7f;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .dataset-select {
+  height: 34px;
+  border-radius: 2px;
+  color: #e5e0d2;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .dataset-select:hover {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .mode-switch {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  height: 100%;
+  gap: 8px;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .mode-switch button {
+  padding: 0 12px;
+  border-radius: 0;
+  color: #b5bebc;
+  border-bottom: 2px solid transparent;
+  align-self: stretch;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .mode-switch button.active {
+  background: transparent;
+  color: #dfc486;
+  box-shadow: none;
+  border-bottom-color: #c9ad75;
+  font-weight: 600;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .workbench {
+  --left-gap: 6px;
+  --right-gap: 6px;
+  margin: 0;
+  background: #0b1217;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  :is(.sidebar, .center-panel, .detail-panel) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  :is(.sidebar, .detail-panel) {
+  background: #151d23;
+  animation: none;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .center-panel {
+  background: #151e24;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .panel-heading {
+  background: #151d23;
+  border-bottom-color: #303b40;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .panel-heading h2 {
+  color: #dddccf;
+  font-size: 15px;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .graph-heading {
+  background: #151e24;
+  border-color: #303b40;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .graph-heading h2,
+:where(html[data-theme="black-gold"]) .flexible-ui .graph-heading h2 svg {
+  color: #d9c596;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .panel-actions > button {
+  border-radius: 3px;
+  border-color: #3b4a50;
+  background: #1c282f;
+  color: #b6c3c4;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .panel-actions
+  > button:hover {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .panel-actions
+  .sidebar-reopen {
+  color: #c9ad75;
+  background: #1c282f;
+  border-color: #3b4a50;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .panel-actions
+  .evidence-toggle {
+  color: #191c1a;
+  background: #c9ad75;
+  border-color: #c9ad75;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .panel-actions
+  .evidence-toggle:hover {
+  color: #191c1a;
+  background: #dfc58f;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .utility-menu > summary {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #171d22;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .utility-menu
+  > summary:hover,
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .utility-menu[open]
+  > summary {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .utility-menu
+  > .action-menu-content {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  background: #171d22;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .utility-menu[open]
+  > .action-menu-content {
+  animation: none;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .utility-menu
+  .action-menu-content
+  button {
+  border-radius: 3px;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .utility-menu
+  .action-menu-content
+  button:hover {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .graph-tools > summary {
+  background: #171d22;
+  border-color: #343f45;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .graph-tools > summary:hover,
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-tools[open]
+  > summary {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .layout-settings > summary {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .search {
+  margin: 12px;
+  padding: 9px 10px;
+  border-radius: 3px;
+  background: #171d22;
+  border-color: #343f45;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .search:focus-within {
+  border-color: #343f45;
+  box-shadow: none;
+  background: #171d22;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  :is(.sidebar-tabs, .detail-tabs) {
+  gap: 10px;
+  padding: 0 12px;
+  border-bottom: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  :is(.sidebar-tabs, .detail-tabs)
+  button {
+  padding: 10px 2px;
+  border-radius: 0;
+  color: #b5bebc;
+  border-bottom: 2px solid transparent;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  :is(.sidebar-tabs, .detail-tabs)
+  button.active {
+  background: transparent;
+  color: #dfc486;
+  border-bottom-color: #c9ad75;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-item {
+  padding: 12px 10px;
+  border-radius: 0;
+  margin-bottom: 0;
+  border: 0;
+  border-bottom: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-group > summary {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-group > summary small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-group + .case-group {
+  border-top: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-item:hover {
+  background: #171d22;
+  border-color: #343f45;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-item.active {
+  background: #2b2c24;
+  border-color: #343f45;
+  box-shadow: none;
+  border-left: 2px solid #343f45;
+  padding-left: 8px;
+  border-left-color: #c9ad75;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-item strong {
+  color: #e4e5df;
+  font-weight: 500;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-item p {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-kicker {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-footer {
+  color: #9bb2b8;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .canvas-toolbar {
+  padding: 8px 14px;
+  background: #151e24;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .global-views {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  gap: 10px;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .global-views button {
+  padding: 7px 2px;
+  border-radius: 0;
+  color: #b5bebc;
+  border-bottom: 2px solid transparent;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .global-views button.active {
+  background: transparent;
+  color: #dfc486;
+  box-shadow: none;
+  border-bottom-color: #c9ad75;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .stage-navigation select {
+  border-radius: 3px;
+  background: #171d22;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .canvas-actions
+  .path-filter {
+  border: 1px solid #343f45;
+  color: #b5bebc;
+  background: #171d22;
+  border-color: #343f45;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .canvas-actions
+  .path-filter.active {
+  background: #333126;
+  border-color: #8c774c;
+  color: #e1c387;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .result-strip {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid #343f45;
+  background: #18242a;
+  border-bottom-color: #31464c;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .result-symbol {
+  background: #223c36;
+  color: #8cc5b6;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .result-summary
+  .current-case-title {
+  color: #e0e5e0;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .result-verdict strong {
+  color: #8cc5b6;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .result-verdict small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .result-strip > b {
+  font-size: 20px;
+  color: #e3c78a;
+  font-variant-numeric: tabular-nums;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .result-strip
+  > .case-facts-button {
+  border: 1px solid #343f45;
+  border-radius: 3px;
+  color: #e4e5df;
+  background: #171d22;
+  border-color: #343f45;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .result-strip
+  > .case-facts-button:hover {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .result-menu > summary {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .result-menu
+  :is(.case-description, .effect-row, .expected-row, .expected-verdict) {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .result-menu
+  .case-description {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .result-menu h3 {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .node-title {
+  border-radius: 0;
+  background: #151d23;
+  border-left-color: #343f45;
+  padding: 16px 0;
+  margin: 0 14px 12px;
+  border: 0;
+  border-bottom: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .source-card {
+  border-radius: 0;
+  border: 0;
+  border-left: 2px solid #343f45;
+  border-bottom: 1px solid #343f45;
+  background: #1a262c;
+  border-left-color: #5e8b95;
+  border-bottom-color: #304149;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .detail-disclosure {
+  border: 0;
+  border-radius: 0;
+  background: #171d22;
+  border-bottom: 1px solid #343f45;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .detail-disclosure
+  > summary {
+  padding: 12px 0;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .detail-disclosure
+  > summary::after {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .detail-disclosure
+  > summary
+  small {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .detail-disclosure-body {
+  padding: 0 0 12px;
+  border-top: 0;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .trace-panel {
+  background: #141d23;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .trace-heading strong {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .trace-panel
+  .action-menu
+  > summary {
+  border-radius: 3px;
+  background: #171d22;
+  border-color: #343f45;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .trace-panel
+  .action-menu-content {
+  border-radius: 3px;
+  border-color: #343f45;
+  box-shadow: none;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .trace-steps button {
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .trace-nav button {
+  border-radius: 3px;
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .trace-nav
+  button:hover:not(:disabled) {
+  background: #20282e;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .trace-nav
+  button:last-child {
+  background: #c9ad75;
+  color: #191c1a;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .panel-resizer {
+  border-radius: 3px;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .panel-resizer > span {
+  width: 2px;
+  height: 28px;
+  border-radius: 3px;
+  background: #273239;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .panel-resizer:is(:hover, :focus-visible, [data-resizing="true"])
+  > span {
+  background: #c5a66c;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .panel-heading h2 svg {
+  color: #bca36e;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .case-item.active strong {
+  font-weight: 600;
+  color: #e8d2a0;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .result-strip:is(.needs_input, .needs_review, .settlement_pending) {
+  background: #2a261d;
+  border-bottom-color: #6d5730;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .result-strip:is(.needs_input, .needs_review, .settlement_pending)
+  .result-symbol,
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .result-strip:is(.needs_input, .needs_review, .settlement_pending)
+  .result-verdict
+  strong {
+  background: transparent;
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .result-strip.local_fail {
+  background: #2c2222;
+  border-bottom-color: #69473e;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .result-strip.local_fail
+  .result-symbol,
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .result-strip.local_fail
+  .result-verdict
+  strong {
+  background: transparent;
+  color: #d99586;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .graph-shell {
+  --graph-paper: #10171c;
+  --graph-sheet: #1b252c;
+  --graph-ink: #e1e6e3;
+  --graph-muted: #9babaf;
+  --graph-rule: #3b4a51;
+  --graph-green: #c9ad75;
+  --graph-stamp: #ca8e7b;
+  --graph-amount: #e2c68b;
+  --graph-highlight: #39372a;
+  --graph-fold: #152027;
+  --graph-heading: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background-image: none;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-shell
+  :is(.flow-card, .measure-card) {
+  border-color: #49606a;
+  border-radius: 2px;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-shell
+  :is(.flow-card, .measure-card):is(.stage, .entry, .decision, .switch) {
+  border-top: 2px solid #729da7;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-shell
+  :is(.flow-card, .measure-card).calculation {
+  background: #27271f;
+  border-top: 2px solid #d0af70;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-shell
+  :is(.flow-card, .measure-card).outcome {
+  border-top: 2px solid #ca8e7b;
+  background: #2a2323;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-shell
+  .flow-card.case-unvisited {
+  background: #141e24;
+  border-color: #31414a;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-shell
+  .flow-card.selected {
+  outline: 1px solid #343f45;
+  outline-offset: 3px;
+  outline-color: #d1b375;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-shell
+  .outcome
+  .node-content::after {
+  display: none;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .graph-shell .stop-status {
+  background: #142027;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-shell
+  .stop-status
+  button {
+  color: #b5bebc;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-shell
+  .stop-list
+  button.hit:is([data-branch="unknown"], [data-branch="review"]) {
+  background: #2a261d;
+  color: #d7b875;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .graph-shell
+  .react-flow__controls {
+  margin: 0;
+  border-color: #3e5159;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .graph-shell .phase-entry {
+  background: #20353c;
+  color: #a4c4cc;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .calculation-intro {
+  border: 0;
+  border-left: 2px solid #343f45;
+  border-radius: 0;
+  background: #2b291f;
+  border-left-color: #c9ad75;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  :is(.calculation-intro strong, .comparison-select b, .report-metrics strong) {
+  font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  :is(.sidebar-footer, .detail-footer) {
+  background: #111a20;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .modal-backdrop {
+  background: #05090dc9;
+  backdrop-filter: none;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .modal-backdrop > section {
+  border-color: #4d5144;
+  border-radius: 4px;
+  background: #171f25;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .modal-backdrop h2 {
+  margin-top: 0;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #e2d3b0;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .modal-backdrop
+  :is(
+    .editor-row,
+    .editor-row input,
+    .editor-row select,
+    .callout p,
+    .difference-row,
+    .report-body > p
+  ) {
+  color: #e4e5df;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .modal-backdrop header p {
+  color: #a2b1ae;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .source-card p {
+  color: #becfce;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .policy-chat {
+  top: 66px;
+  height: min(570px, calc(100dvh - 80px));
+  background: #18232a;
+  border-color: #53636b;
+  box-shadow: 0 12px 36px #0005;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .case-item.active
+  .case-footer {
+  color: #cdb57d;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .calculation-intro strong {
+  color: #e3c78a;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .modal-backdrop
+  :is(
+    .editor-row,
+    .editor-row input,
+    .editor-row select,
+    .callout p,
+    .difference-row,
+    .report-body > p
+  ) {
+  color: #c4cfca;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .primary,
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  .layout-controls
+  button.active {
+  background: #c9ad75;
+  color: #191c1a;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .primary:hover {
+  background: #dfc58f;
+  color: #191c1a;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  :is(.comparison-select b, .report-metrics strong) {
+  color: #e0c58c;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .kind-tag.calculation {
+  background: #413721;
+  color: #e5c78c;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .calculation-tag {
+  color: #ddbe83;
+}
+:where(html[data-theme="black-gold"])
+  .flexible-ui
+  :is(button, a, summary, input, select):focus-visible {
+  outline-color: #d8b978;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .policy-chat form input {
+  background: #101a20;
+  color: #dae2de;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .policy-chat form button {
+  background: #c9ad75;
+  color: #191c1a;
+}
+@media (max-width: 900px) {
+  :where(html[data-theme="black-gold"]) .flexible-ui .workbench {
+    margin: 0;
+  }
+
+  :where(html[data-theme="black-gold"]) .flexible-ui .mobile-tabs button {
+    border-radius: 3px;
+    color: #b5bebc;
+  }
+
+  :where(html[data-theme="black-gold"])
+    .flexible-ui
+    .mobile-tabs
+    button.active {
+    background: #20282e;
+    color: #e4e5df;
+  }
+}
+@media (max-width: 700px) {
+  :where(html[data-theme="black-gold"]) .flexible-ui .policy-chat {
+    top: 120px;
+    height: min(570px, calc(100dvh - 134px));
+  }
+
+  :where(html[data-theme="black-gold"]) .flexible-ui .topbar {
+    padding: 6px 12px;
+  }
+
+  :where(html[data-theme="black-gold"]) .flexible-ui .product-title > svg {
+    padding: 0;
+    border-radius: 3px;
+  }
+}
+@container canvas-panel (max-width: 420px) {
+  :where(html[data-theme="black-gold"]) .flexible-ui .result-strip {
+    grid-template-columns: 28px minmax(0, 1fr) auto auto;
+  }
+
+  :where(html[data-theme="black-gold"]) .flexible-ui .result-summary {
+    grid-column: 2 / -1;
+  }
+
+  :where(html[data-theme="black-gold"]) .flexible-ui .result-strip > b {
+    grid-column: 2;
+  }
+}
+@container canvas-panel (max-width: 340px) {
+  :where(html[data-theme="black-gold"]) .flexible-ui .trace-panel {
+    flex-wrap: wrap;
+  }
+
+  :where(html[data-theme="black-gold"]) .flexible-ui .trace-heading,
+  :where(html[data-theme="black-gold"]) .flexible-ui .trace-nav {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  :where(html[data-theme="black-gold"]) .flexible-ui .trace-nav > div {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+:where(html[data-theme="black-gold"]) .graph-shell {
+  --graph-edge-ink: #738c99;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .theme-toggle {
+  background: #1c282f;
+  border-color: #6a593b;
+  border-radius: 3px;
+  color: #e1c58c;
+}
+:where(html[data-theme="black-gold"]) .flexible-ui .theme-toggle:hover {
+  background: #302e24;
+}

@@ -1,0 +1,73 @@
+.trace-panel {
+  position: relative;
+  z-index: 30;
+}
+.trace-heading > .action-menu {
+  position: static;
+  margin-right: auto;
+}
+.trace-panel .action-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #f6f9f1;
+  color: var(--green);
+  list-style: none;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.trace-panel .action-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.trace-panel .action-menu[open] > summary,
+.trace-panel .action-menu > summary:hover {
+  background: #eaf1e2;
+}
+.trace-panel .action-menu-content {
+  position: absolute;
+  z-index: 40;
+  left: 12px;
+  right: 12px;
+  bottom: calc(100% + 8px);
+  padding-top: 12px;
+  border: 1px solid #d8e1cd;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 30px #29412c26;
+}
+.trace-panel .trace-steps {
+  max-height: min(240px, 45dvh);
+}
+.trace-panel .trace-steps button {
+  white-space: normal;
+}
+.trace-panel .trace-steps b {
+  overflow-wrap: anywhere;
+}
+.trace-panel .trace-nav .current-step-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #627a55;
+  font-size: 14px;
+}
+.trace-panel .trace-nav > div {
+  flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+  .trace-panel .trace-nav .current-step-label {
+    display: none;
+  }
+  .trace-panel .trace-nav > div {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

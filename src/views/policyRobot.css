@@ -1,0 +1,283 @@
+.policy-robot {
+  --robot-shell-light: #fbfff9;
+  --robot-shell: #c9e6da;
+  --robot-outline: #72988a;
+  --robot-joint: #79a694;
+  --robot-visor: #193d42;
+  --robot-eye: #b5f1e5;
+  --robot-badge: #e9c57c;
+  --robot-highlight: #fff;
+  --robot-blush: #e6a89c;
+  --robot-shadow: #365d4d;
+  --robot-label: #3f6b58;
+  --robot-control: #f6fcf7;
+  position: fixed;
+  z-index: 75;
+  right: 20px;
+  bottom: 80px;
+  width: 88px;
+  height: 104px;
+  color: var(--robot-label);
+  animation: robot-appear 250ms ease-out;
+}
+
+:root[data-theme="black-gold"] .policy-robot {
+  --robot-shell-light: #f1dfb3;
+  --robot-shell: #bca170;
+  --robot-outline: #957a4e;
+  --robot-joint: #7c806e;
+  --robot-visor: #172d35;
+  --robot-eye: #aae2df;
+  --robot-badge: #edd093;
+  --robot-highlight: #fff0cc;
+  --robot-blush: #ce9b87;
+  --robot-shadow: #000;
+  --robot-label: #dbc28f;
+  --robot-control: #202b30;
+}
+
+.policy-robot .robot-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 88px;
+  height: 104px;
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: var(--robot-label);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.policy-robot .robot-illustration {
+  display: block;
+  width: 88px;
+  height: 88px;
+  overflow: visible;
+  filter: drop-shadow(0 3px 4px #183e3326);
+}
+
+.policy-robot .robot-caption {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--robot-control);
+  color: var(--robot-label);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.policy-robot .robot-head {
+  transform-origin: 52px 54px;
+  transition: transform 200ms ease;
+}
+
+.policy-robot .robot-trigger:hover .robot-head,
+.policy-robot .robot-trigger:focus-visible .robot-head {
+  transform: translateY(-2px) rotate(-4deg);
+}
+
+.policy-robot .robot-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: robot-blink 6s infinite;
+}
+
+.policy-robot .robot-eye-track {
+  transition: transform 160ms;
+}
+
+.policy-robot .robot-right-arm {
+  transform-origin: 73px 72px;
+}
+
+.policy-robot .robot-spark {
+  opacity: 0;
+  transform-origin: 91px 22px;
+}
+
+.policy-robot .is-greeting {
+  animation: robot-greet 650ms ease-out;
+}
+
+.policy-robot .is-greeting .robot-right-arm {
+  animation: robot-wave 650ms ease-in-out;
+}
+
+.policy-robot .is-greeting .robot-spark {
+  animation: robot-spark 650ms ease-out;
+}
+
+.policy-robot.is-dragging .robot-trigger {
+  cursor: grabbing;
+}
+
+.policy-robot.is-dragging .robot-trigger .robot-head {
+  transform: rotate(5deg);
+}
+
+.policy-robot.is-dragging .robot-eye-track {
+  transform: translateY(-2px);
+}
+
+.policy-robot .robot-hide {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--robot-outline);
+  border-radius: 50%;
+  background: var(--robot-control);
+  color: var(--robot-label);
+  opacity: 0.72;
+}
+
+.policy-robot .robot-hide:hover,
+.policy-robot .robot-hide:focus-visible {
+  opacity: 1;
+}
+
+.policy-robot .robot-hint {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  right: 0;
+  padding: 6px 9px;
+  border: 1px solid var(--robot-outline);
+  border-radius: 6px;
+  background: var(--robot-control);
+  color: var(--robot-label);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms;
+}
+
+.policy-robot:hover:not(.is-dragging) .robot-hint,
+.policy-robot:focus-within:not(.is-dragging) .robot-hint {
+  opacity: 1;
+}
+
+.policy-robot[data-near-left="true"] .robot-hint {
+  left: 0;
+  right: auto;
+}
+
+.policy-robot[data-near-top="true"] .robot-hint {
+  top: calc(100% + 7px);
+  bottom: auto;
+}
+
+.policy-robot .robot-instructions {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.policy-robot.is-hidden {
+  width: auto;
+  height: auto;
+}
+
+.policy-robot .robot-restore {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--robot-outline);
+  border-radius: 8px;
+  background: var(--robot-control);
+  color: var(--robot-label);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@keyframes robot-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes robot-blink {
+  0%,
+  43%,
+  47%,
+  100% {
+    transform: scaleY(1);
+  }
+  45% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes robot-greet {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-7px) rotate(-3deg);
+  }
+  60% {
+    transform: translateY(-2px) rotate(2deg);
+  }
+}
+
+@keyframes robot-wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20%,
+  60% {
+    transform: rotate(-24deg);
+  }
+  40%,
+  80% {
+    transform: rotate(12deg);
+  }
+}
+
+@keyframes robot-spark {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  35%,
+  65% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 700px) {
+  .policy-robot {
+    right: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .policy-robot,
+  .policy-robot * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
