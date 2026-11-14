@@ -15,7 +15,12 @@ import {
 } from "react";
 import { DatasetContext, useDataset } from "./data/graph";
 import { exits } from "./data/edges";
-import { expressionText, referencedRules } from "./data/nodeDetails";
+import {
+  expressionText,
+  browseResultFormulas,
+  referencedRules,
+  resultFormula,
+} from "./data/nodeDetails";
 import { useDatasetImports } from "./data/useDatasetImports";
 import { checkExpected, compareRuns } from "./cases/compare";
 import { evaluate } from "./engine/evaluate";
@@ -47,6 +52,61 @@ const resultAmountText = (r: Evaluation) =>
     : fmt(r.amount);
 const calculationValue = (value: string | undefined, key?: string) =>
   value !== undefined && key?.endsWith("_ratio") ? value : fmt(value);
+
+function positionFormulaDialog(
+  dialog: HTMLDialogElement,
+  anchor: HTMLButtonElement,
+) {
+  const gap = 12;
+  const viewportWidth = document.documentElement.clientWidth;
+  const viewportHeight = document.documentElement.clientHeight;
+  const viewport = {
+    left: 0,
+    top: 0,
+    right: viewportWidth,
+    bottom: viewportHeight,
+  };
+  const card = (anchor.closest(".flow-card") ?? anchor).getBoundingClientRect();
+  const { width, height } = dialog.getBoundingClientRect();
+  const canvas = anchor.closest(".graph-shell")?.getBoundingClientRect();
+  const candidates = [
+    [card.right + gap, card.top],
+    [card.left - width - gap, card.top],
+    [card.left, card.bottom + gap],
+    [card.left, card.top - height - gap],
+  ];
+  const clamp = (value: number, min: number, max: number) =>
+    Math.max(min, Math.min(value, max));
+  const fit = (bounds: {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+  }) => {
+    const left = Math.max(gap, bounds.left + gap);
+    const top = Math.max(gap, bounds.top + gap);
+    const right = Math.min(viewportWidth - gap, bounds.right - gap);
+    const bottom = Math.min(viewportHeight - gap, bounds.bottom - gap);
+    for (const [i, [x, y]] of candidates.entries()) {
+      const nextX = i < 2 ? x : clamp(x, left, right - width);
+      const nextY = i < 2 ? clamp(y, top, bottom - height) : y;
+      if (
+        nextX >= left &&
+        nextY >= top &&
+        nextX + width <= right &&
+        nextY + height <= bottom
+      )
+        return [nextX, nextY];
+    }
+  };
+  const [x, y] = (canvas && fit(canvas)) ??
+    fit(viewport) ?? [
+      clamp(card.left, gap, viewportWidth - width - gap),
+      clamp(card.bottom + gap, gap, viewportHeight - height - gap),
+    ];
+  dialog.style.left = `${x}px`;
+  dialog.style.top = `${y}px`;
+}
 const valueText = (v: unknown) =>
   v === true ? "是" : v === false ? "否" : v == null ? "未知" : String(v);
 function download(name: string, data: unknown) {
@@ -246,6 +306,48 @@ function Workbench({
         : undefined,
     [graph, comparison, comparedCase],
   );
+  const formula = useMemo(
+    () => resultFormula(dataset, result),
+    [dataset, result],
+  );
+  const browseFormulas = useMemo(
+    () => browseResultFormulas(dataset),
+    [dataset],
+  );
+  const formulaNodeIds = useMemo(
+    () =>
+      mode === "browse"
+        ? [...browseFormulas.keys()]
+        : formula
+          ? [formula.nodeId]
+          : [],
+    [mode, browseFormulas, formula],
+  );
+  const [formulaTarget, setFormulaTarget] = useState("");
+  const dialogFormula =
+    mode === "cases" && formula?.nodeId === formulaTarget ? formula : undefined;
+  const dialogPaths =
+    mode === "browse" ? browseFormulas.get(formulaTarget) : undefined;
+  const formulaDialogRef = useRef<HTMLDialogElement>(null);
+  const formulaAnchorRef = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => {
+    const dialog = formulaDialogRef.current;
+    const anchor = formulaAnchorRef.current;
+    if (dialog && anchor && formulaTarget) {
+      if (!dialog.open) dialog.showModal();
+      positionFormulaDialog(dialog, anchor);
+    }
+  }, [formulaTarget, mode]);
+  useEffect(() => {
+    const reposition = () => {
+      const dialog = formulaDialogRef.current;
+      const anchor = formulaAnchorRef.current;
+      if (dialog?.open && anchor?.isConnected)
+        positionFormulaDialog(dialog, anchor);
+    };
+    window.addEventListener("resize", reposition);
+    return () => window.removeEventListener("resize", reposition);
+  }, []);
   const differences =
     result && otherResult ? compareRuns(result, otherResult) : [];
   const expectationDiff =
@@ -361,7 +463,7 @@ function Workbench({
   }, [sourceOpen, sourceSelection]);
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
-      if (e.defaultPrevented) return;
+      if (e.defaultPrevented || formulaDialogRef.current?.open) return;
       if (e.key === "Escape") {
         setSourceOpen(false);
         setComparison(false);
@@ -1087,6 +1189,11 @@ function Workbench({
             onStage={setStage}
             onSelect={(id) => pick(id, false)}
             onToggleNode={toggleNode}
+            formulaNodeIds={formulaNodeIds}
+            onViewFormula={(id, anchor) => {
+              formulaAnchorRef.current = anchor;
+              setFormulaTarget(id);
+            }}
             inspectedExit={inspectedExit}
             onInspectExit={inspectExit}
             focusToken={focusToken}
@@ -1590,6 +1697,70 @@ function Workbench({
           )}
         </aside>
       </main>
+      {(dialogFormula || dialogPaths) && (
+        <dialog
+          ref={formulaDialogRef}
+          id="result-formula-dialog"
+          className="result-formula-dialog"
+          aria-labelledby="result-formula-title"
+          onClose={() => setFormulaTarget("")}
+          onClick={(event) => {
+            if (event.target === event.currentTarget)
+              event.currentTarget.close();
+          }}
+        >
+          <div className="result-formula-sheet">
+            <header>
+              <div>
+                <h2 id="result-formula-title">
+                  {dialogFormula ? "本例理赔公式" : "各路径理赔公式"}
+                </h2>
+                <p>{nodeIndex.get(formulaTarget)?.label}</p>
+              </div>
+              <button
+                className="icon-button"
+                type="button"
+                autoFocus
+                aria-label="关闭理赔公式"
+                onClick={() => formulaDialogRef.current?.close()}
+              >
+                <Icon name="close" size={18} />
+              </button>
+            </header>
+            <section className="result-formula-detail">
+              {dialogPaths?.map(({ id, title, lines }) => (
+                <section className="result-formula-path" key={id}>
+                  <h3>{title}</h3>
+                  <ol>
+                    {lines.map((line) => (
+                      <li key={line.id}>{line.text}</li>
+                    ))}
+                  </ol>
+                </section>
+              ))}
+              {dialogFormula && (
+                <ol>
+                  {dialogFormula.lines.map(({ id, text }) => (
+                    <li key={id}>{text}</li>
+                  ))}
+                </ol>
+              )}
+              {dialogFormula &&
+                (dialogFormula.amount === null ? (
+                  <p>金额待核定 · {dialogFormula.pendingReason}</p>
+                ) : (
+                  <p className="result-formula-amount">
+                    {dialogFormula.amount.replace(
+                      /\B(?=(\d{3})+(?!\d))(?=\d*(?:\.|$))/g,
+                      ",",
+                    )}{" "}
+                    元
+                  </p>
+                ))}
+            </section>
+          </div>
+        </dialog>
+      )}
       {sourceOpen && (
         <div
           className="modal-backdrop"
