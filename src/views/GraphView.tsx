@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import {
   ReactFlow,
   BaseEdge,
@@ -77,6 +77,7 @@ type CardData = {
   muted?: boolean;
   step?: number;
   output?: string;
+  onViewFormula?: (event: MouseEvent<HTMLButtonElement>) => void;
   ratioOutput?: boolean;
   pending?: boolean;
   sourceText?: string;
@@ -189,6 +190,18 @@ function CardSurface({
           </span>
         )}
       </button>
+      {data.onViewFormula && (
+        <button
+          type="button"
+          className="node-formula-button"
+          aria-controls="result-formula-dialog"
+          aria-haspopup="dialog"
+          onClick={data.onViewFormula}
+        >
+          <Icon name="calculator" size={14} />
+          查看公式
+        </button>
+      )}
       {!!data.stops?.length && (
         <div className="stop-list" aria-label="停止出口">
           {[false, true].map((status) => {
@@ -353,6 +366,8 @@ interface Props {
   onStage: (id: string) => void;
   onSelect: (id: string) => void;
   onToggleNode: (id: string) => void;
+  formulaNodeIds: string[];
+  onViewFormula: (id: string, anchor: HTMLButtonElement) => void;
   inspectedExit: string;
   onInspectExit: (source: string, target: string) => void;
   focusToken: number;
@@ -372,6 +387,8 @@ export function GraphView({
   onStage,
   onSelect,
   onToggleNode,
+  formulaNodeIds,
+  onViewFormula,
   inspectedExit,
   onInspectExit,
   focusToken,
@@ -436,20 +453,33 @@ export function GraphView({
     onStage,
     onSelect,
     onToggleNode,
+    onViewFormula,
     onInspectExit,
   });
-  callbackRef.current = { onStage, onSelect, onToggleNode, onInspectExit };
+  callbackRef.current = {
+    onStage,
+    onSelect,
+    onToggleNode,
+    onInspectExit,
+    onViewFormula,
+  };
   const visited = new Map(
     result?.trace.map((s, i) => [s.node_id, { ...s, index: i }]) ?? [],
   );
   const traversed = new Set(result?.trace.map((s) => s.edge_id));
+  const foldedFormulas = formulaNodeIds
+    .map((id) => nodeIndex.get(id)!)
+    .filter(isFoldedOutcome);
+  const [foldedFormulaHeights, setFoldedFormulaHeights] = useState(
+    new Map<string, number>(),
+  );
   // Playback and selection decorate a stable, measured main-flow layout.
   const layoutKey = `${stage}|${onlyPath ? result?.trace.map((s) => s.node_id).join(",") : ""}|${
     result?.trace
       .filter((s) => s.kind === "calculation")
       .map((s) => `${s.node_id}:${s.output ?? "pending"}`)
       .join(",") ?? ""
-  }`;
+  }|${formulaNodeIds.join(",")}`;
   const prepared = useMemo<{ nodes: Node<CardData>[]; edges: Edge[] }>(() => {
     const go = (id: string) => callbackRef.current.onStage(id),
       pick = (id: string) => callbackRef.current.onSelect(id);
@@ -512,6 +542,10 @@ export function GraphView({
           title: n.label,
           sub: id,
           kind: n.kind,
+          onViewFormula: formulaNodeIds.includes(id)
+            ? (event) =>
+                callbackRef.current.onViewFormula(id, event.currentTarget)
+            : undefined,
           onPick: () => callbackRef.current.onToggleNode(id),
           phase: phase
             ? { title: phase.title, open: () => go(phase.id) }
@@ -573,6 +607,24 @@ export function GraphView({
     (async () => {
       await document.fonts.ready;
       if (generation.current !== turn || !measurementRef.current) return;
+      const measured = [
+        ...measurementRef.current.querySelectorAll<HTMLElement>(
+          ".folded-formula-measure",
+        ),
+      ];
+      setFoldedFormulaHeights(
+        new Map(
+          measured.map((wrapper) => [
+            wrapper.dataset.id!,
+            Math.max(
+              128,
+              Math.ceil(
+                wrapper.firstElementChild!.getBoundingClientRect().height,
+              ),
+            ),
+          ]),
+        ),
+      );
       const stopRows = new Map<
         string,
         { id: string; x: number; y: number }[]
@@ -703,15 +755,31 @@ export function GraphView({
       if (traversed.has(e.id)) shown.set(e.id, e);
     }
     if (targeted) shown.set(targeted.id, targeted);
+    if (!result && formulaNodeIds.includes(inspectedExit)) {
+      const inspected = folded.find(
+        (e) => e.source === selected && e.target === inspectedExit,
+      );
+      if (inspected) shown.set(inspected.id, inspected);
+    }
     // An explicitly opened result gets priority as the anchor when it has multiple inputs.
     for (const e of [...(targeted ? [targeted] : []), ...shown.values()]) {
       const outcome = nodeIndex.get(e.target)!;
-      appendCard(e.target, e.source, 128, {
-        title: outcome.label,
-        sub: e.target,
-        kind: "outcome",
-        onPick: () => callbackRef.current.onToggleNode(e.target),
-      });
+      const hasFormula = formulaNodeIds.includes(e.target);
+      appendCard(
+        e.target,
+        e.source,
+        foldedFormulaHeights.get(e.target) ?? 128,
+        {
+          title: outcome.label,
+          sub: e.target,
+          kind: "outcome",
+          onViewFormula: hasFormula
+            ? (event) =>
+                callbackRef.current.onViewFormula(e.target, event.currentTarget)
+            : undefined,
+          onPick: () => callbackRef.current.onToggleNode(e.target),
+        },
+      );
     }
     const extraEdges = [
       ...elements.edges.filter((e) => !e.data?.foldedExit),
@@ -759,7 +827,18 @@ export function GraphView({
         data: { ...e.data, route: routed.routes.get(e.id) },
       })),
     };
-  }, [dataset, layout, elements, stage, dependencies, selected, result]);
+  }, [
+    dataset,
+    layout,
+    elements,
+    stage,
+    dependencies,
+    selected,
+    inspectedExit,
+    result,
+    formulaNodeIds,
+    foldedFormulaHeights,
+  ]);
   currentView.current.nodes = display.nodes;
   useEffect(() => {
     if (!instance || !ready || !elements.nodes.length) return;
@@ -1044,6 +1123,24 @@ export function GraphView({
         {prepared.nodes.map((n) => (
           <div key={n.id} data-id={n.id}>
             <CardSurface data={n.data} handles={false} />
+          </div>
+        ))}
+        {foldedFormulas.map((node) => (
+          <div
+            className="folded-formula-measure"
+            data-id={node.id}
+            key={node.id}
+          >
+            <CardSurface
+              data={{
+                title: node.label,
+                sub: node.id,
+                kind: "outcome",
+                onViewFormula: () => {},
+                onPick: () => {},
+              }}
+              handles={false}
+            />
           </div>
         ))}
       </div>
