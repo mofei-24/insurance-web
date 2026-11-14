@@ -715,6 +715,83 @@ button.primary,
 :is(.flow-card, .measure-card):is(.stage, .outcome, .portal) {
   width: 224px;
 }
+.node-formula-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 10px 8px;
+  padding: 5px 8px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  color: var(--graph-green);
+  font-size: 12px;
+  font-weight: 600;
+}
+.node-formula-button:hover {
+  background: var(--graph-fold);
+}
+.result-formula-dialog {
+  position: fixed;
+  inset: 12px auto auto 12px;
+  width: min(360px, calc(100vw - 32px));
+  max-width: none;
+  max-height: 75dvh;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fffdf7;
+  color: #263c34;
+  box-shadow: 0 10px 32px #15261e26;
+}
+.result-formula-dialog::backdrop {
+  background: #15261e1a;
+}
+.result-formula-sheet header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.result-formula-sheet h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+.result-formula-sheet header p {
+  margin: 0;
+  line-height: 1.5;
+}
+.result-formula-detail {
+  padding: 12px 16px 16px;
+}
+.result-formula-detail ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.result-formula-path + .result-formula-path {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.result-formula-path h3 {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 6px;
+}
+.result-formula-amount {
+  margin: 10px 0 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
 :is(.flow-card, .measure-card):is(.stage, .entry, .decision, .switch) {
   border-top: 4px solid var(--graph-green);
 }
